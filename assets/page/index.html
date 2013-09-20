@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>iMolly</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+        <link href="static/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen"/>
+        <link href="static/js/pnotify/jquery.pnotify.default.css" rel="stylesheet" media="screen"/>
+        <link href="static/css/style.css" rel="stylesheet" media="screen"/>
+    </head>
+
+    <body ng-app="iMolly">
+        <div ng-view="iView"></div>
+        <script src="static/js/jumbo.js"></script>
+        <script src="static/js/script.js"></script>
+        <script type="text/javascript">
+            var socket = null;
+            var scope = null;
+            var rootScope = null;
+            var routeParams = null;
+
+            var app = angular.module ("iMolly", []).config (["$routeProvider", function ($routeProvider) {
+                $routeProvider.
+                    when ("/", {templateUrl: "static/page/login_signup.html", controller: login_signup}).
+                    when ("/iMolly/:user", {templateUrl: "static/page/home.html", controller: home}).
+                    otherwise ({redirectTo: "/"});
+            }]);
+
+            /// since any tweet is escaped before being saved in to the database, we'll be using `ng-bind-html-unsafe` -- we're going to be scanning for # tags
+            app.filter ("hash", function () {
+                return function (tweet) {
+                    if (tweet.match(/#[a-zA-Z0-9]+/)) {
+                        var HTML = "";
+                        tweet.split(" ").forEach (function (word) {
+                            if (word.match(/^#[a-zA-Z0-9_]+$/))
+                                HTML += '<a href="#/iMolly/'+ routeParams.user +'" onclick="joinTheHash(\''+ word.slice(1) +'\');" style="text-decoration:none;"><i>'+ word +'</i></a> ';
+
+                            else
+                                HTML += word + " ";
+                        });
+
+                        return HTML.trim();
+                    }
+
+                    else {
+                        return tweet;
+                    }
+                }
+            });
+
+
+
+            /// when a hash is clicked it does something...AMAZING!
+            /// it sends a socket request to join the conversation + also it'll fetch the latest 15 tweets that contain the hash
+            function joinTheHash (hash) {
+                pnotify ("you've joined <strong>#"+ hash +"</strong>", "info");
+                console.log (hash);
+            }
+
+
+
+            /// login/sign up controller
+            function login_signup ($scope, $http, $location) {
+                $scope.credentials = {
+                    username: "",
+                    password: "",
+                };
+
+                $scope.new = {
+                    username: "",
+                    password: ""
+                };
+
+                /// login form submit handler
+                /// NOTE: the "checking" here is just for act --- server verification will be DON
+                $scope.login_form_submit = function () {
+                    console.log ("checking form `login_form` validity...");
+
+                    if ($scope.credentials.username.length > 0 && $scope.credentials.password.length > 5) {
+                        console.log ("no tweaking detected");
+                        console.log ("sending credentials...");
+
+                        $http ({
+                            method: "POST",
+                            url: "/login",
+                            data: csrf ($scope.credentials),
+                        }).success (function (data) {
+                            if (data.success) {
+                                console.log ("account is legit");
+                                pnotify (data.message, "info");
+                                console.log ("passing control to `home`");
+                                $location.path ("/iMolly/"+ $scope.credentials.username);
+                            }
+
+                            else {
+                                pnotify (data.message, "error");
+                            }
+                        });
+                    }
+
+                    else {
+                        console.log ("form is invalid --- you tweaked with the form didn't you!");
+                        console.log ("if this reaches the server, THIS IP address will be blocked INDEFINITELY --- go ahead make my day -- PUNK!");
+                    }
+                }
+
+                /// sign up form listener
+                $scope.signup_form_submit = function () {
+                    console.log ("checking form `signup_form` validity...");
+
+                    if ($scope.new.username.length > 0 && $scope.new.password.length > 5) {
+                        console.log ("no tweaking detected");
+                        console.log ("sending new user request...");
+
+                        $http ({
+                            method: "POST",
+                            url: "/signup",
+                            data: csrf ($scope.new),
+                        }).success (function (data) {
+                            if (data.success) {
+                                console.log ("new user accepted");
+                                pnotify (data.message, "success");
+                            }
+
+                            else {
+                                console.log ("dude, you ain't legit!");
+                                pnotify (data.message, "error");
+                            }
+                        });
+                    }
+
+                    else {
+                        console.log ("form is invalid --- you tweaked with the form didn't you!");
+                        console.log ("if this reaches the server, THIS IP address will be blocked INDEFINITELY --- go ahead make my day -- PUNK!");
+                    }
+                }
+            }
+
+
+
+            /// home controller
+            function home ($scope, $http, $location, $routeParams, $rootScope) {
+                scope = $scope;
+                rootScope = $rootScope;
+                routeParams = $routeParams;
+
+                $scope.tweet = "";
+                $scope.tweets = [];
+                $scope.following = [];
+                $scope.followers = [];
+                $scope.messages = [];
+                $scope.requests = [];
+                $scope.rooms = {iPublic: [], iPrivate: [], iMember: []};
+                $scope.online = {};
+
+                // for uno momento we'll be getting initiating data the old school way by calling init! --- cool name uh!
+                $http ({
+                    method: "POST",
+                    url: "/init",
+                    data: csrf ({user: $routeParams.user}),
+                }).success (function (data) {
+                    if (data.success) {
+                        console.log (data.message);
+
+                        $scope.tweets = data.tweet.tweets;
+                        $scope.following = data.tweet.following;
+                        $scope.followers = data.tweet.followers;
+                        $scope.requests = data.requests;
+
+                        $scope.messages = data.messages;
+                        var iInboxNotRead = 0;
+                        var iSentNotRead = 0;
+                        var iInbox = [];
+                        var iSent = [];
+                        data.messages.forEach (function (message) {
+                            message.from == $routeParams.user ? iSent.push (message) : iInbox.push (message);
+
+                            if (message.from == $routeParams.user && !message.seen) {
+                                iSentNotRead ++;
+                                message.fresh = true;
+                            }
+
+                            else if (message.to == $routeParams.user && !message.seen) {
+                                iInboxNotRead++;
+                                message.fresh = true;
+                            }
+                        });
+
+                        $scope.message = {
+                            iInbox: iInbox,
+                            iSent: iSent,
+                            iInboxNotRead: iInboxNotRead,
+                            iSentNotRead: iSentNotRead
+                        };
+
+                        // here we'll have the BARE data of rooms @ data.rooms
+                        // so let's start computing... --- i saved like infinity Dyno's here! :)
+                        // private rooms
+                        var iPrivate = [];
+                        // public rooms
+                        var iPublic = [];
+                        // holds rooms which the user is a member of
+                        var iMember = [];
+                        data.rooms.forEach(function (room) {
+                            room.public ? iPublic.push (room) : iPrivate.push (room);
+
+                            if (room.members.indexOf($routeParams.user) != -1) {
+                                iMember.push (room.name);
+                            }
+                        });
+
+                        $scope.rooms = {
+                            iPublic: iPublic,
+                            iPrivate: iPrivate,
+                            iMember: iMember
+                        };
+
+                        $scope.users = data.users;
+                        $scope.online = data.online;
+
+                        /// "cron" job that updates the timestamp of the tweets so they are updated LIVE -----------------------------------------------------------------
+                        setInterval ( function () {
+                            for (var i = 0; i < $scope.tweets.length; i++) {
+                                var tweet = $scope.tweets[i];
+
+                                if (tweet.age.seconds != undefined) {
+                                    if (tweet.age.seconds + 1 == 60) {
+                                        if (tweet.age.minutes != undefined) {
+                                            if (tweet.age.minutes + 1 == 60) {
+                                                if (tweet.age.hours != undefined) {
+                                                    if (tweet.age.hours + 1 == 24) {
+                                                        if (tweet.age.days != undefined)
+                                                            tweet.age.days += 1;
+
+                                                        else
+                                                            tweet.age.days = 1;
+
+                                                        tweet.age.hours = 0;
+                                                    }
+
+                                                    else
+                                                        tweet.age.hours += 1;
+
+                                                    tweet.age.minutes = 0;
+                                                }
+
+                                                else
+                                                    tweet.age.hours = 1;
+
+                                                tweet.age.minutes = 0;
+                                            }
+
+                                            else
+                                                tweet.age.minutes += 1;
+                                        }
+
+                                        else
+                                            tweet.age.minutes = 1;
+
+                                        tweet.age.seconds = 0;
+                                    }
+
+                                    else
+                                        tweet.age.seconds += 1;
+                                }
+
+                                else
+                                    tweet.age.seconds = 1;
+                            }
+
+                            $rootScope.$apply();
+                        }, 1000);
+
+
+
+                        // socket.io -------------------------------------------------------------------------------------------------------------------------------------
+                        // TODO: Authenticate the freaken' socket by stetting authentication true --- DuckDuckGo out how!
+                        socket = io.connect();
+
+                        // personal messages are sent via an emit of 'username' +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+                        // this will be sent via socket.id so don't try anything son!
+                        socket.on($routeParams.user, function (data) {
+                            if (data.success) {
+                                switch (data.mode) {
+                                    // delete request has been confirmed
+                                    case "DELETE_TWEET":
+                                        console.log ("removing tweet with id [%s]...", data.tweet.id);
+                                        $("#"+ data.tweet.id).hide("fade", 185, function () {
+                                            pnotify ("Tweet deleted successfully", "success");
+                                            // completely nuking the tweet from DOM
+                                            $("#"+ data.tweet.id).remove();
+                                            console.log ("DON removing tweet");
+                                        });
+                                    break;
+
+                                    // tweet has been successfully tweeted!
+                                    case "iTWEET":
+                                        $scope.tweets.splice (0, 0, data.tweet);
+                                        pnotify ("tweet tweeted", "info");
+                                    break;
+
+                                    default:
+                                    break;
+                                }
+
+                                // this makes sure the tweets scope is digested --- since we're changing outside the relam of 'Angular's realm'
+                                $rootScope.$apply();
+                            }
+
+                            // success: false
+                            else {
+                                console.log (data);
+                            }
+                        });
+
+
+
+                        // "iYap" concerning messages are sent via a broadcast +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                        socket.on ("message", function (data) {
+                            if (data.success) {
+                                switch (data.mode) {
+                                    // a tweet has been deleted!
+                                    case "DELETE_TWEET":
+                                        console.log ("removing tweet with id [%s]", data.tweet.id);
+                                        // here, the deleting will be done quietly --- i.e. there won't be any pnotify
+                                        $("#"+ data.tweet.id).hide("fade", 185);
+                                    break;
+
+                                    // someone in the loop has tweeted --- PUSH-IT!
+                                    case "iTWEET":
+                                        $scope.tweets.splice (0, 0, data.tweet);
+                                    break;
+
+                                    // hurray! --- online
+                                    case "ONLINE_PLUS":
+                                        pnotify ("user <strong>"+ data.user +"</strong> is now online", "info");
+                                        $scope.online.push (data.user);
+                                    break;
+
+                                    default:
+                                    break;
+                                }
+
+                                $rootScope.$apply();
+                            }
+
+                            else {
+                                console.log (data);
+                            }
+                        });
+                    }
+
+                    else {
+                        pnotify (data.message, "error");
+                        $location.path ("/");
+                    }
+                });
+
+                // Twitter: START ----------------------------------------------------------------------------------------------------------------------------------------
+                $scope.tweet_submit = function () {
+                    console.log ("Checking validity...");
+
+                    if ($scope.tweet.length > 0 && $scope.tweet.length < 142) {
+                        console.log ("no tweaking detected");
+                        console.log ("sending tweet...");
+                        socket.emit ("message", {tweet: $scope.tweet, mode: "iTWEET"});
+                        console.log ("resetting `tweet_form` form...");
+                        $scope.tweet = "";
+                        console.log ("DON");
+                    }
+                }
+
+                /// humanize timestamp --- since there's a "cron" job which deletes tweets older than 14 days
+                /// @param {Object} age
+                /// @return {String}
+                $scope.age = function (age) {
+                    if (age.days != undefined) {
+                        return age.days == 1 ? age.days + " day ago" : age.days + " days ago";
+                    }
+
+                    if (age.hours != undefined) {
+                        return age.hours == 1 ? age.hours + " hour ago" : age.hours + " hours ago";
+                    }
+
+                    if (age.minutes != undefined) {
+                        return age.minutes == 1 ? age.minutes + " minute ago" : age.minutes + " minutes ago";
+                    }
+
+                    return "just now";
+                }
+
+                /// if the tweet is owned by the user an overlay containing a delete button will be shown on hover
+                /// @param {Boolean} isSo
+                /// @return {String}
+                $scope.isOwner = function (isSo) {
+                    return isSo ? "" : "hide";
+                }
+
+                /// delete's a tweet
+                /// don't try anything funny --- validation will be done on the server side...
+                /// @param {Object} tweet
+                $scope.deleteTweet = function (tweet) {
+                    console.log ("Deleting tweet %d...", tweet.id);
+                    socket.emit ("message", {tweet: tweet, mode: "DELETE_TWEET"});
+                }
+                // Twitter: END ------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+                // Message: START ----------------------------------------------------------------------------------------------------------------------------------------
+                /// delete's a message
+                /// @param {Object} message
+                $scope.deleteMessage = function (message) {
+                    console.log ("Deleting message %d", message.id);
+                }
+
+                /// initiates a modal accordingly reply
+                /// @param {Object} inbox
+                $scope.replyTo = function (inbox) {
+                    console.log ("Replying to %s", inbox.from);
+                }
+
+                /// if inbox being rendered is fresh a 'Fresh' class will be added to it --- which is a LIGHT green, Bootstrap's 'success'
+                /// @param {Boolean} isIT
+                /// @return {String}
+                $scope.isFresh = function (isIt) {
+                    return isIt ? "fresh" : "";
+                }
+                // Message: END ------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+                // Room: START -------------------------------------------------------------------------------------------------------------------------------------------
+                /// given a rooms public status returns a class accordingly
+                /// @param {Boolean} isIt
+                /// @return {String}
+                $scope.isPublic = function (isIt) {
+                    return isIt ? "glyphicon glyphicon-globe" : "glyphicon glyphicon-lock";
+                }
+
+                /// delete's a room
+                /// @param {Object} room
+                $scope.deleteRoom = function (room) {
+                    console.log ("deleting room by %s", room.owner);
+                }
+
+                /// if the current user is the creator of a room - delete overlay will be shown
+                /// @param {Object} room
+                /// @return {String}
+                $scope.isCreator = function (room) {
+                    return room.owner == $routeParams.user ? "" : "hide";
+                }
+
+                /// if the current user is members of a room - leave overlay will be shown
+                /// @param {Object} room
+                /// @return {String}
+                $scope.isMember = function (room) {
+                    return room.members.indexOf($routeParams.user) == -1 ? "hide" : "";
+                }
+                // Room: END ---------------------------------------------------------------------------------------------------------------------------------------------
+                bind_menu();
+            }
+
+            login_signup.$inject = ["$scope", "$http", "$location"];
+            home.$inject = ["$scope", "$http", "$location", "$routeParams", "$rootScope"];
+        </script>
+    </body>
+</html>

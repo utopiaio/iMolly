@@ -1,0 +1,18 @@
+{
+  "name": "iChat",
+  "author": "Moe Szyslack <moe.duffdude@gmail.com>",
+  "description": "small and EXCLUSIVE app built with Nodejs",
+  "version": "0.0.1",
+  "repository": "https://github.com/moeduffdude/iMolly.git",
+  "main": "app.js",
+  "dependencies": {
+    "connect": "2.8.5",
+    "socket.io": "0.9.16"
+    "pg": "2.5.0",
+  },
+
+  "engines": {
+    "node": "0.10.18",
+    "npm": "1.3.8"
+  }
+}
