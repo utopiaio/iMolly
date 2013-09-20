@@ -49,7 +49,7 @@ var options = {
 };
 // the variable name says it all --- it's a freaken session!
 var session = {
-    key: 'iChat',
+    key: 'iMolly',
     cookie: { maxAge: 1800000, secure: true }
 };
 // cached resources will be stored here

@@ -17,7 +17,6 @@
             var socket = null;
             var scope = null;
             var rootScope = null;
-            var routeParams = null;
 
             var app = angular.module ("iMolly", []).config (["$routeProvider", function ($routeProvider) {
                 $routeProvider.
@@ -142,7 +141,6 @@
             function home ($scope, $http, $location, $routeParams, $rootScope) {
                 scope = $scope;
                 rootScope = $rootScope;
-                routeParams = $routeParams;
 
                 $scope.tweet = "";
                 $scope.tweets = [];
