@@ -130,6 +130,7 @@ function init (request, response) {
         var messages = [];
         var requests = [];
         var rooms = [];
+        var hashes = [];
 
         // this will count how many times function 'iSerialFunc' has been called
         var FIN = 0;
@@ -177,11 +178,16 @@ function init (request, response) {
                 rooms = items;
             }
 
+            // #tags -----------------------------------------------------------------------------------------------------------------------------------------------------
+            else if (FLAG == "DON_#") {
+                hashes = items;
+            }
+
             // yep, we're counting...like that Vampire that counts Mr. Count, i think his name is
             FIN ++;
 
             // DON! ------------------------------------------------------------------------------------------------------------------------------------------------------
-            if (FIN == 6) {
+            if (FIN == 7) {
                 initJSON.tweet = {
                     tweets:     tweets,
                     following:  request.session.user.following,
@@ -193,6 +199,7 @@ function init (request, response) {
                 initJSON.rooms = rooms;
                 initJSON.users = users;
                 initJSON.online = online_p;
+                initJSON.hashes = hashes;
 
                 initJSON.success = true;
                 initJSON.message = "initiation DON!";
@@ -200,6 +207,15 @@ function init (request, response) {
                 qJSON.qJSON (response, initJSON);
 
                 // initiating socket connection
+                // authorizing connection, we're simply going to test for a session, if there is one, you're in else aus! [that's German for Out!]
+                // FIX: i don't know weather or not am REALLY securing the socket connection or just adding garbage!
+                io.configure (function () {
+                    io.set ("authorization", function (handshakeData, callback) {
+                        // each socket [initially i.e.] connection is tested for session --- simple and efficient, i think
+                        request.session.user == undefined ? callback (null, false) : callback (null, true);
+                    });
+                });
+
                 // initially named 'on connection' argument 'socket' & that got me in to a heap of trouble! [get it - heap] --- that's why it's named 'socket_'
                 io.sockets.on ("connection", function (socket_) {
                     if (!request.session.user.initiated) {
@@ -227,6 +243,7 @@ function init (request, response) {
         pg_client.query ('SELECT id, by, tweet, age(now(), "timestamp") AS age FROM tweet WHERE ((by IN ('+ ifollowing.slice(1, -1) +')) OR (by=$1)) ORDER BY timestamp DESC LIMIT 50;', [request.session.user.username], function (error, result) {
             !error ? iSerialFunc (result.rows, "DON_TWT") : iSerialFunc ([], "DON_TWT");
         });
+
 
         // ALL users -----------------------------------------------------------------------------------------------------------------------------------------------------
         pg_client.query ("SELECT username FROM users;", function (error, result) {
@@ -256,6 +273,12 @@ function init (request, response) {
         pg_client.query ('SELECT * FROM room ORDER BY name ASC;', function (error, result) {
             !error ? iSerialFunc (result.rows, "DON_RM") : iSerialFunc ([], "DON_RM");
         });
+
+
+        // ALL #tags -----------------------------------------------------------------------------------------------------------------------------------------------------
+        pg_client.query ('SELECT hash, mentions, initiator FROM hash ORDER BY mentions DESC;', function (error, result) {
+            !error ? iSerialFunc (result.rows, "DON_#") : iSerialFunc ([], "DON_#");
+        });
     }
 
     // we won't be setting the status code to 403 since we want to redirect to home page
@@ -268,11 +291,12 @@ function init (request, response) {
 
 function login (request, response, next) {
     var iJSON = {};
+    // ya, all things are in small cases...
+    request.body.username = request.body.username.toLowerCase();
 
     // clean slate...
     if (request.body.password.length > 5 && request.session.user == undefined) {
-        request.body.username = request.body.username.toLowerCase();
-
+        // two factor authorization my ass!
         pg_client.query ("SELECT * FROM users WHERE username=$1 AND password=$2;", [request.body.username, crypto.sha512 (request.body.password)], function (error, result) {
             if (error) {
                 iJSON.success = false;
@@ -298,7 +322,7 @@ function login (request, response, next) {
                         initiated:  false
                     };
 
-                    // this constitutes as a weired activity
+                    // so far so good... online directory check...
                     if (online_p.indexOf (request.body.username) == -1) {
                         online_p.push (request.body.username);
                     }

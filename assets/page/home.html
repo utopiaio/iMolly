@@ -1,17 +1,46 @@
 <div class="container" style="margin-top:18px;">
     <div class="row">
+        <!-- side navigation: START ------------------------------------------------------------------------------------------------------------------------------------->
         <div class="col-md-3">
             <div class="bs-sidebar hidden-print affix" role="complementary">
                 <div class="nav bs-sidenav list-group" style="font-size:16px;">
-                    <button class="text-left list-group-item active" activate="iTweet"><i class="glyphicon glyphicon-bullhorn"></i>&nbsp;&nbsp;iTweet<span class="badge">{{ followers.length }}</span><span class="badge">{{ following.length }}</span></button>
-                    <button class="text-left list-group-item" activate="iMessage"><i class="glyphicon glyphicon-inbox"></i>&nbsp;&nbsp;iMessage<span class="badge">{{ message.iInboxNotRead }}</span></button>
-                    <button class="text-left list-group-item" activate="iRoom"><i class="glyphicon glyphicon-comment"></i>&nbsp;&nbsp;iRoom<span class="badge">{{ (rooms.iPublic).length }}</span><span class="badge">{{ (rooms.iPrivate).length }}</span></button>
-                    <button class="text-left list-group-item" activate="iRequest"><i class="glyphicon glyphicon-star-empty"></i>&nbsp;&nbsp;iRequest<span class="badge">{{ requests.length }}</span></button>
-                    <button class="text-left list-group-item" activate="iFinder"><i class="glyphicon glyphicon-search"></i>&nbsp;&nbsp;iFinder<span class="badge">{{ online.length }}</span><span class="badge">{{ users.length }}</span></button>
-                    <button class="text-left list-group-item" activate="Logout"><i class="glyphicon glyphicon-log-out"></i>&nbsp;&nbsp;Logout</button>
+                    <button class="text-left list-group-item active" activate="iTweet">
+                        <i class="glyphicon glyphicon-bullhorn"></i>&nbsp;&nbsp;iTweet
+                        <span class="badge">{{ followers.length }}</span>
+                        <span class="badge">{{ following.length }}</span>
+                    </button>
+
+                    <button class="text-left list-group-item" activate="iMessage">
+                        <i class="glyphicon glyphicon-inbox"></i>&nbsp;&nbsp;iMessage
+                        <span class="badge">{{ message.iInboxNotRead }}</span>
+                    </button>
+
+                    <button class="text-left list-group-item" activate="iRoom">
+                        <i class="glyphicon glyphicon-comment"></i>&nbsp;&nbsp;iRoom
+                        <span class="badge">{{ (rooms.iPublic).length }}</span>
+                        <span class="badge">{{ (rooms.iPrivate).length }}</span>
+                    </button>
+
+                    <button class="text-left list-group-item" activate="iRequest">
+                        <i class="glyphicon glyphicon-star-empty"></i>&nbsp;&nbsp;iRequest
+                        <span class="badge">{{ requests.length }}</span>
+                    </button>
+
+                    <button class="text-left list-group-item" activate="iFinder">
+                        <i class="glyphicon glyphicon-search"></i>&nbsp;&nbsp;iFinder
+                        <span class="badge">{{ hashes.length }}</span>
+                        <span class="badge">{{ online.length }}</span>
+                        <span class="badge">{{ users.length }}</span>
+                    </button>
+
+                    <button class="text-left list-group-item" activate="Logout">
+                        <i class="glyphicon glyphicon-log-out"></i>&nbsp;&nbsp;Logout
+                    </button>
                 </div>
-          </div>
+            </div>
         </div>
+        <!-- side navigation: END --------------------------------------------------------------------------------------------------------------------------------------->
+
 
         <div class="col-md-6 text-center" style="border-left:1px solid rgba(64, 64, 64, 0.085); border-right:1px solid rgba(64, 64, 64, 0.085);" role="main">
             <!-- we'll not using templates and stuff since `updates` are carried out via Sockets -->

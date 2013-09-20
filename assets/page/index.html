@@ -17,6 +17,7 @@
             var socket = null;
             var scope = null;
             var rootScope = null;
+            var routeParams = null;
 
             var app = angular.module ("iMolly", []).config (["$routeProvider", function ($routeProvider) {
                 $routeProvider.
@@ -141,6 +142,7 @@
             function home ($scope, $http, $location, $routeParams, $rootScope) {
                 scope = $scope;
                 rootScope = $rootScope;
+                routeParams = $routeParams;
 
                 $scope.tweet = "";
                 $scope.tweets = [];
@@ -150,6 +152,7 @@
                 $scope.requests = [];
                 $scope.rooms = {iPublic: [], iPrivate: [], iMember: []};
                 $scope.online = {};
+                $scope.hashes = [];
 
                 // for uno momento we'll be getting initiating data the old school way by calling init! --- cool name uh!
                 $http ({
@@ -164,6 +167,7 @@
                         $scope.following = data.tweet.following;
                         $scope.followers = data.tweet.followers;
                         $scope.requests = data.requests;
+                        $scope.hashes = data.hashes;
 
                         $scope.messages = data.messages;
                         var iInboxNotRead = 0;
@@ -324,10 +328,12 @@
                                         $("#"+ data.tweet.id).hide("fade", 185);
                                     break;
 
+
                                     // someone in the loop has tweeted --- PUSH-IT!
                                     case "iTWEET":
                                         $scope.tweets.splice (0, 0, data.tweet);
                                     break;
+
 
                                     // hurray! --- online
                                     case "ONLINE_PLUS":
@@ -335,10 +341,30 @@
                                         $scope.online.push (data.user);
                                     break;
 
+
+                                    // we are in the mist of "conversation"
+                                    case "MENTION_PLUS":
+                                        $scope.hashes.forEach (function (hash, index) {
+                                            if (data.hash.hash == hash.hash) {
+                                                $scope.hashes[index] = data.hash;
+                                            }
+                                        });
+                                    break;
+
+
+                                    // we are in the presence of a new hash --- rise-up, rise-up
+                                    // am really good with naming modes aren't i...
+                                    case "NEW_HASH":
+                                        $scope.hashes.splice (0, 0, data.hash);
+                                        // i don't know about you but i would like to know new hash's out there...
+                                        $routeParams.user != data.hash.initiator ? pnotify ("<strong>#"+ data.hash.hash +"</strong> started by <strong>"+ data.hash.initiator +"</strong>", "info") : pnotify ("<strong>#"+ data.hash.hash +"</strong> started", "info");
+                                    break;
+
                                     default:
                                     break;
                                 }
 
+                                // initiating digest!
                                 $rootScope.$apply();
                             }
 
