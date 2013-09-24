@@ -36,8 +36,8 @@ function pnotify (message, message_type) {
 function bind_menu () {
     $(".list-group-item").click (function () {
         $(".list-group-item").removeClass ("active");
-        $(".iChat").hide();
-        $(".iChat").removeClass("hide");
+        $(".iMolly").hide();
+        $(".iMolly").removeClass("hide");
         $(this).addClass("active");
         $("#"+ $(this).attr("activate")).show("fade", 675);
     });

@@ -26,17 +26,25 @@
                     otherwise ({redirectTo: "/"});
             }]);
 
-            /// since any tweet is escaped before being saved in to the database, we'll be using `ng-bind-html-unsafe` -- we're going to be scanning for # tags
+            /// since any tweet is escaped before being saved in to the database, we'll be using `ng-bind-html-unsafe` -- we're going to be scanning for # tags and @
             app.filter ("hash", function () {
                 return function (tweet) {
-                    if (tweet.match (/#[a-zA-Z0-9]+/)) {
+                    if (tweet.match (/^[#@]{1}[a-zA-Z0-9_]+$/)) {
                         var HTML = "";
-                        tweet.split(" ").forEach (function (word) {
-                            if (word.match (/^#[a-zA-Z0-9_]+$/))
-                                HTML += '<a href="#/iMolly/'+ routeParams.user +'" onclick="joinTheHash(\''+ word.slice(1) +'\');" style="text-decoration:none;"><i>'+ word +'</i></a> ';
+                        tweet.split (" ").forEach (function (word) {
+                            console.log (word);
 
-                            else
+                            if (word.match (/^#[a-zA-Z0-9_]+$/)) {
+                                HTML += '<a href="#/iMolly/'+ routeParams.user +'" onclick="joinTheHash(\''+ word.slice(1) +'\');" style="text-decoration:none;"><i>'+ word +'</i></a> ';
+                            }
+
+                            else if (word.match (/^@[a-zA-Z0-9_]+$/)) {
+                                HTML += '<a href="#/iMolly/'+ routeParams.user +'" onclick="followUser(\''+ word.slice(1) +'\');" style="text-decoration:none;"><i>'+ word +'</i></a> ';
+                            }
+
+                            else {
                                 HTML += word + " ";
+                            }
                         });
 
                         return HTML.trim();
@@ -54,11 +62,14 @@
             /// it sends a socket request to join the conversation + also it'll fetch the latest 15 tweets that contain the hash
             /// this is where to globals come in to play
             function joinTheHash (hash) {
-            	console.log ("sending status request for the hash...");
-            	socket.emit ("message", {mode: "JOIN_HASH", hash: hash});
+                console.log ("sending status request for the hash...");
+                socket.emit ("message", {mode: "JOIN_HASH", hash: hash});
             }
 
-
+            /// when a '@tag' is clicked if sends a request to the user
+            function followUser (user) {
+                console.log (user);
+            }
 
             /// login/sign up controller
             function login_signup ($scope, $http, $location) {
@@ -145,7 +156,7 @@
                 rootScope = $rootScope;
                 routeParams = $routeParams;
 
-                $scope.tweet = "";
+                $scope.tweet = '';
                 $scope.tweets = [];
                 $scope.following = [];
                 $scope.followers = [];
@@ -176,14 +187,14 @@
                         var iInbox = [];
                         var iSent = [];
                         data.messages.forEach (function (message) {
-                            message.from == $routeParams.user ? iSent.push (message) : iInbox.push (message);
+                            message.from === $routeParams.user ? iSent.push (message) : iInbox.push (message);
 
-                            if (message.from == $routeParams.user && !message.seen) {
+                            if (message.from === $routeParams.user && !message.seen) {
                                 iSentNotRead ++;
                                 message.fresh = true;
                             }
 
-                            else if (message.to == $routeParams.user && !message.seen) {
+                            else if (message.to === $routeParams.user && !message.seen) {
                                 iInboxNotRead++;
                                 message.fresh = true;
                             }
@@ -207,7 +218,7 @@
                         data.rooms.forEach(function (room) {
                             room.public ? iPublic.push (room) : iPrivate.push (room);
 
-                            if (room.members.indexOf($routeParams.user) != -1) {
+                            if (room.members.indexOf($routeParams.user) !== -1) {
                                 iMember.push (room.name);
                             }
                         });
@@ -226,49 +237,57 @@
                             for (var i = 0; i < $scope.tweets.length; i++) {
                                 var tweet = $scope.tweets[i];
 
-                                if (tweet.age.seconds != undefined) {
-                                    if (tweet.age.seconds + 1 == 60) {
-                                        if (tweet.age.minutes != undefined) {
-                                            if (tweet.age.minutes + 1 == 60) {
+                                if (tweet.age.seconds !== undefined) {
+                                    if (tweet.age.seconds + 1 === 60) {
+                                        if (tweet.age.minutes !== undefined) {
+                                            if (tweet.age.minutes + 1 === 60) {
                                                 if (tweet.age.hours != undefined) {
-                                                    if (tweet.age.hours + 1 == 24) {
-                                                        if (tweet.age.days != undefined)
+                                                    if (tweet.age.hours + 1 === 24) {
+                                                        if (tweet.age.days !== undefined) {
                                                             tweet.age.days += 1;
+                                                        }
 
-                                                        else
+                                                        else {
                                                             tweet.age.days = 1;
+                                                        }
 
                                                         tweet.age.hours = 0;
                                                     }
 
-                                                    else
+                                                    else {
                                                         tweet.age.hours += 1;
+                                                    }
 
                                                     tweet.age.minutes = 0;
                                                 }
 
-                                                else
+                                                else {
                                                     tweet.age.hours = 1;
+                                                }
 
                                                 tweet.age.minutes = 0;
                                             }
 
-                                            else
+                                            else {
                                                 tweet.age.minutes += 1;
+                                            }
                                         }
 
-                                        else
+                                        else {
                                             tweet.age.minutes = 1;
+                                        }
 
                                         tweet.age.seconds = 0;
                                     }
 
-                                    else
+                                    else {
                                         tweet.age.seconds += 1;
+                                    }
                                 }
 
-                                else
+                                else {
                                     tweet.age.seconds = 1;
+                                }
                             }
 
                             $rootScope.$apply();
@@ -302,30 +321,32 @@
                                         pnotify ("tweet tweeted", "info");
                                     break;
 
-									// you've now joined the conversation, via click i.e.
-									case "JOIN_HASH":
-										// if we just added the tweets, it'll not be "noticalbel", to do so, we'll use interval
-										// a lot of reaserach went in to the interval --- i.e. 375 --- NAAAT! [Borat]
+                                    // you've now joined the conversation, via click i.e.
+                                    case "JOIN_HASH":
+                                        // if we just added the tweets, it'll not be "noticalbel", to do so, we'll use interval
+                                        // a lot of reaserach went in to the interval --- i.e. 375 --- NAAAT! [Borat]
 
-										// we know there is at least UNO tweet or we're in a heap of trouble
-										console.log ("joined hash #%s", data.hash);
-										pnotify ("joined <strong>#"+ data.hash +"</strong>", "info");
-										pnotify ("adding latest 15 tweets under <strong>#"+ data.hash + "</strong>", "info");
-										var index = data.tweet.length - 1;
-										var iAdd = setInterval (function () {
-											// we're making sure the hashed tweet isn't already "in" and is following stuff and stuff...
-											// give me a break am dying right now ---- i have a cold!
-											if ($scope.following != null && $scope.following.indexOf (data.tweet[index].by) == -1 && $routeParams.user != data.tweet[index].by)
-												$scope.tweets.splice (0, 0, data.tweet[index]);
+                                        // we know there is at least UNO tweet or we're in a heap of trouble
+                                        console.log ("joined hash #%s", data.hash);
+                                        pnotify ("joined <strong>#"+ data.hash +"</strong>", "info");
+                                        pnotify ("adding latest 15 tweets under <strong>#"+ data.hash + "</strong>", "info");
+                                        var index = data.tweet.length - 1;
+                                        var iAdd = setInterval (function () {
+                                            // we're making sure the hashed tweet isn't already "in" and is following stuff and stuff...
+                                            // give me a break am dying right now ---- i have a cold!
+                                            if ($scope.following !== null && $scope.following.indexOf (data.tweet[index].by) === -1 && $routeParams.user !== data.tweet[index].by) {
+                                                $scope.tweets.splice (0, 0, data.tweet[index]);
+                                            }
 
-											if (--index == -1) {
-												clearInterval (iAdd);
-												pnotify ("<strong>DON</strong> adding latest tweets under <strong>#"+ data.hash + "</strong>", "info");
-											}
-										}, 375);
-									break;
+                                            if (--index === -1) {
+                                                clearInterval (iAdd);
+                                                pnotify ("<strong>DON</strong> adding latest tweets under <strong>#"+ data.hash + "</strong>", "info");
+                                            }
+                                        }, 375);
+                                    break;
 
                                     default:
+                                        // unknown mode reqyest
                                     break;
                                 }
 
@@ -369,7 +390,7 @@
                                     // we are in the mist of "conversation"
                                     case "MENTION_PLUS":
                                         $scope.hashes.forEach (function (hash, index) {
-                                            if (data.hash.hash == hash.hash) {
+                                            if (data.hash.hash === hash.hash) {
                                                 $scope.hashes[index] = data.hash;
                                             }
                                         });
@@ -381,23 +402,23 @@
                                     case "NEW_HASH":
                                         $scope.hashes.splice (0, 0, data.hash);
                                         // i don't know about you but i would like to know new hash's out there...
-                                        $routeParams.user != data.hash.initiator ? pnotify ("<strong>#"+ data.hash.hash +"</strong> started by <strong>"+ data.hash.initiator +"</strong>", "info") : pnotify ("<strong>#"+ data.hash.hash +"</strong> started", "info");
+                                        $routeParams.user !== data.hash.initiator ? pnotify ("<strong>#"+ data.hash.hash +"</strong> started by <strong>"+ data.hash.initiator +"</strong>", "info") : pnotify ("<strong>#"+ data.hash.hash +"</strong> started", "info");
                                     break;
 
-									// tweet with a hash
-									// here'it'll be a little different, we should make sure the user isn't already 'following' the user
-									// otherwise we'll have a double tweet in our hands!
-									case "HASH_TWEET":
-										if ($routeParams.user != data.tweet.by) {
-											// the user isn't following anyone
-											if ($scope.following == null)
-												$scope.tweets.splice (0, 0, data.tweet);
+                                    // tweet with a hash
+                                    // here'it'll be a little different, we should make sure the user isn't already 'following' the user
+                                    // otherwise we'll have a double tweet in our hands!
+                                    case "HASH_TWEET":
+                                        if ($routeParams.user !== data.tweet.by) {
+                                            // the user isn't following anyone
+                                            if ($scope.following === null)
+                                                $scope.tweets.splice (0, 0, data.tweet);
 
-											// user is following some ppl, making sure the #ed tweet-er isn't followed, if true we're adding the tweet
-											else if ($scope.following.indexOf (data.tweet.by) == -1)
-                            					$scope.tweets.splice (0, 0, data.tweet);
-                            			}
-									break;
+                                            // user is following some ppl, making sure the #ed tweet-er isn't followed, if true we're adding the tweet
+                                            else if ($scope.following.indexOf (data.tweet.by) === -1)
+                                                $scope.tweets.splice (0, 0, data.tweet);
+                                        }
+                                    break;
 
                                     default:
                                     break;
@@ -437,16 +458,16 @@
                 /// @param {Object} age
                 /// @return {String}
                 $scope.age = function (age) {
-                    if (age.days != undefined) {
-                        return age.days == 1 ? age.days + " day ago" : age.days + " days ago";
+                    if (age.days !== undefined) {
+                        return age.days === 1 ? age.days + " day ago" : age.days + " days ago";
                     }
 
-                    if (age.hours != undefined) {
-                        return age.hours == 1 ? age.hours + " hour ago" : age.hours + " hours ago";
+                    if (age.hours !== undefined) {
+                        return age.hours === 1 ? age.hours + " hour ago" : age.hours + " hours ago";
                     }
 
-                    if (age.minutes != undefined) {
-                        return age.minutes == 1 ? age.minutes + " minute ago" : age.minutes + " minutes ago";
+                    if (age.minutes !== undefined) {
+                        return age.minutes === 1 ? age.minutes + " minute ago" : age.minutes + " minutes ago";
                     }
 
                     return "just now";
@@ -511,14 +532,14 @@
                 /// @param {Object} room
                 /// @return {String}
                 $scope.isCreator = function (room) {
-                    return room.owner == $routeParams.user ? "" : "hide";
+                    return room.owner === $routeParams.user ? "" : "hide";
                 };
 
                 /// if the current user is members of a room - leave overlay will be shown
                 /// @param {Object} room
                 /// @return {String}
                 $scope.isMember = function (room) {
-                    return room.members.indexOf($routeParams.user) == -1 ? "hide" : "";
+                    return room.members.indexOf($routeParams.user) === -1 ? "hide" : "";
                 };
                 // Room: END ---------------------------------------------------------------------------------------------------------------------------------------------
                 bind_menu();

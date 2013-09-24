@@ -6,31 +6,31 @@
                 <div class="nav bs-sidenav list-group" style="font-size:16px;">
                     <button class="text-left list-group-item active" activate="iTweet">
                         <i class="glyphicon glyphicon-bullhorn"></i>&nbsp;&nbsp;iTweet
-                        <span class="badge">{{ followers.length }}</span>
-                        <span class="badge">{{ following.length }}</span>
+                        <span class="badge" ng-bind="followers.length"></span>
+                        <span class="badge" ng-bind="following.length"></span>
                     </button>
 
                     <button class="text-left list-group-item" activate="iMessage">
                         <i class="glyphicon glyphicon-inbox"></i>&nbsp;&nbsp;iMessage
-                        <span class="badge">{{ message.iInboxNotRead }}</span>
+                        <span class="badge" ng-bind="message.iInboxNotRead"></span>
                     </button>
 
                     <button class="text-left list-group-item" activate="iRoom">
                         <i class="glyphicon glyphicon-comment"></i>&nbsp;&nbsp;iRoom
-                        <span class="badge">{{ (rooms.iPublic).length }}</span>
-                        <span class="badge">{{ (rooms.iPrivate).length }}</span>
+                        <span class="badge" ng-bind="(rooms.iPublic).length"></span>
+                        <span class="badge" ng-bind="(rooms.iPrivate).length"></span>
                     </button>
 
                     <button class="text-left list-group-item" activate="iRequest">
                         <i class="glyphicon glyphicon-star-empty"></i>&nbsp;&nbsp;iRequest
-                        <span class="badge">{{ requests.length }}</span>
+                        <span class="badge" ng-bind="requests.length"></span>
                     </button>
 
                     <button class="text-left list-group-item" activate="iFinder">
                         <i class="glyphicon glyphicon-search"></i>&nbsp;&nbsp;iFinder
-                        <span class="badge">{{ hashes.length }}</span>
-                        <span class="badge">{{ online.length }}</span>
-                        <span class="badge">{{ users.length }}</span>
+                        <span class="badge" ng-bind="hashes.length"></span>
+                        <span class="badge" ng-bind="online.length"></span>
+                        <span class="badge" ng-bind="users.length"></span>
                     </button>
 
                     <button class="text-left list-group-item" activate="Logout">
@@ -45,7 +45,7 @@
         <div class="col-md-6 text-center" style="border-left:1px solid rgba(64, 64, 64, 0.085); border-right:1px solid rgba(64, 64, 64, 0.085);" role="main">
             <!-- we'll not using templates and stuff since `updates` are carried out via Sockets -->
 
-            <div id="iTweet" class="iChat">
+            <div id="iTweet" class="iMolly">
                 <div class="row" style="padding:4px 0px 18px 0px;">
                     <form name="tweet_form" role="form" novalidate ng-submit="tweet_submit()">
                         <div class="col-md-9">
@@ -84,7 +84,7 @@
                 </div>
             </div>
 
-            <div id="iMessage" class="iChat hide">
+            <div id="iMessage" class="iMolly hide">
                 <div class="row">
                     <div class="col-md-10 col-md-offset-1">
                         <input type="text" placeholder="Search" class="form-control input-lg" ng-model="query" />
@@ -137,7 +137,7 @@
                 </div>
             </div>
 
-            <div id="iRoom" class="iChat hide">
+            <div id="iRoom" class="iMolly hide">
                 <div class="panel-group" id="accordion">
                     <div class="panel panel-default text-left">
                         <div class="panel-heading">
@@ -175,9 +175,9 @@
                 </div>
             </div>
 
-            <div id="iRequest" class="iChat hide">Requests</div>
-            <div id="iFinder" class="iChat hide">iFinder</div>
-            <div id="Logout" class="iChat hide">Logout</div>
+            <div id="iRequest" class="iMolly hide">Requests</div>
+            <div id="iFinder" class="iMolly hide">iFinder</div>
+            <div id="Logout" class="iMolly hide">Logout</div>
         </div>
     </div>
 </div>
