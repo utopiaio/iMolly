@@ -2,7 +2,7 @@
  *
  * Moe Szysalck <moe.duffdude@gmail.com>
  * 30.08.2013 13:46:29
- * iChat
+ * iMolly
  * a small and EXCLUSIVE app, built with the AMAZING Nodejs, Angular.js and Bootstrap 3.0
  *
  * on a personal note: in the name of the Holly Spirit, AMEN! --- you know am taking abooout --- Megan Fox 14!
