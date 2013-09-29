@@ -14,47 +14,67 @@
         <script src="static/js/jumbo.js"></script>
         <script src="static/js/script.js"></script>
         <script type="text/javascript">
+            // FIX: this is VERY bad --- them being global vars
             var socket = null;
             var scope = null;
             var rootScope = null;
             var routeParams = null;
 
-            var app = angular.module ("iMolly", []).config (["$routeProvider", function ($routeProvider) {
+            /// since ERY tweet is escaped before being saved in to the database, we'll be using `ng-bind-html-unsafe` -- we're going to be scanning for # tags and @
+            /// the filter module has been greatly tweaked for performance ---- it'll be hit only once --- before it was hit ERY second
+            /// NOTE: i intentionally did not add nl2br on return to support newline feed on tweets --- since people can get abusive with \n the page won't look clean anymore
+            angular.module("iMolly_plus", []).filter ("hash", function () {
+                var userList = JSON.stringify (scope.users);
+
+                return function (tweet, index) {
+                    var HTML = "";
+
+                    // tweet has not been scanned for # or @, so we'll be doing that
+                    if (tweet.hashed === undefined) {
+                        var HTML = "";
+
+                        // we have some scanning to do...
+                        if (tweet.tweet.match (/[#@]{1}[a-zA-Z0-9_]+/)) {
+                            tweet.tweet.split (/[ \n]/).forEach (function (word) {
+                                // we have a #tag
+                                if (word.match (/^#[a-zA-Z0-9_]+$/)) {
+                                    HTML += '<a href="#/iMolly/'+ routeParams.user +'" onclick="joinTheHash(\''+ word.slice(1) +'\');" class="text-info" style="text-decoration:none;"><i>'+ word +'</i></a> ';
+                                }
+
+                                // we have a @user
+                                // we'll also be checking for validity on user --- i.e. it must exist before we link it
+                                // TODO: change the LAME username verification scheme!
+                                else if (word.match (/^@[a-zA-Z0-9_]+$/) && userList.indexOf('{"username":"'+ word.slice(1).toLowerCase() + '"}') !== -1) {
+                                    HTML += '<a href="#/iMolly/'+ routeParams.user +'" onclick="followUser(\''+ word.slice(1).toLowerCase() +'\');" class="text-info" style="text-decoration:none;"><i>'+ word.toLowerCase() +'</i></a> ';
+                                }
+
+                                else {
+                                    HTML += word + " ";
+                                }
+                            });
+
+                            scope.tweets[index].tweet = HTML.trim();
+                            return HTML.trim();
+                        }
+
+                        scope.tweets[index].hashed = true;
+                    }
+
+                    // either the tweet has been hashed or id dones not contain any # or @ --- PURE tweet --- HH
+                    else {
+                        return tweet.tweet;
+                    }
+                };
+            });
+
+
+
+            angular.module ("iMolly", ["iMolly_plus"]).config (["$routeProvider", function ($routeProvider) {
                 $routeProvider.
                     when ("/", {templateUrl: "static/page/login_signup.html", controller: login_signup}).
                     when ("/iMolly/:user", {templateUrl: "static/page/home.html", controller: home}).
                     otherwise ({redirectTo: "/"});
             }]);
-
-            /// since any tweet is escaped before being saved in to the database, we'll be using `ng-bind-html-unsafe` -- we're going to be scanning for # tags and @
-            app.filter ("hash", function () {
-                return function (tweet) {
-                    if (tweet.match (/^[#@]{1}[a-zA-Z0-9_]+$/)) {
-                        var HTML = "";
-                        tweet.split (" ").forEach (function (word) {
-                            console.log (word);
-
-                            if (word.match (/^#[a-zA-Z0-9_]+$/)) {
-                                HTML += '<a href="#/iMolly/'+ routeParams.user +'" onclick="joinTheHash(\''+ word.slice(1) +'\');" style="text-decoration:none;"><i>'+ word +'</i></a> ';
-                            }
-
-                            else if (word.match (/^@[a-zA-Z0-9_]+$/)) {
-                                HTML += '<a href="#/iMolly/'+ routeParams.user +'" onclick="followUser(\''+ word.slice(1) +'\');" style="text-decoration:none;"><i>'+ word +'</i></a> ';
-                            }
-
-                            else {
-                                HTML += word + " ";
-                            }
-                        });
-
-                        return HTML.trim();
-                    }
-
-                    else {
-                        return tweet;
-                    }
-                };
-            });
 
 
 
@@ -62,13 +82,14 @@
             /// it sends a socket request to join the conversation + also it'll fetch the latest 15 tweets that contain the hash
             /// this is where to globals come in to play
             function joinTheHash (hash) {
-                console.log ("sending status request for the hash...");
+                console.log ("sending JOIN_HASH request for [#%s]...", hash);
                 socket.emit ("message", {mode: "JOIN_HASH", hash: hash});
             }
 
             /// when a '@tag' is clicked if sends a request to the user
             function followUser (user) {
-                console.log (user);
+                console.log ("sending follow request for [@%s]...", user);
+                socket.emit ("message", {mode: "SEND_FOLLOW_REQUEST", to: user});
             }
 
             /// login/sign up controller
@@ -135,7 +156,6 @@
                             }
 
                             else {
-                                console.log ("dude, you ain't legit!");
                                 pnotify (data.message, "error");
                             }
                         });
@@ -294,9 +314,8 @@
                         }, 1000);
 
 
-
                         // socket.io -------------------------------------------------------------------------------------------------------------------------------------
-                        // TODO: Authenticate the freaken' socket by stetting authentication true --- DuckDuckGo out how!
+                        // NOTE: try to initiate socket connection outside the 'privileged' scope and you'll get a 403
                         socket = io.connect();
 
                         // personal messages are sent via an emit of 'username' +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
@@ -305,7 +324,7 @@
                             if (data.success) {
                                 switch (data.mode) {
                                     // delete request has been confirmed
-                                    case "DELETE_TWEET":
+                                    case "DELETE_TWEET": //---------------------------------------------------------------------------------------------------------------
                                         console.log ("removing tweet with id [%s]...", data.tweet.id);
                                         $("#"+ data.tweet.id).hide("fade", 185, function () {
                                             pnotify ("Tweet deleted successfully", "success");
@@ -315,14 +334,18 @@
                                         });
                                     break;
 
+
+
                                     // tweet has been successfully tweeted!
-                                    case "TWEET":
+                                    case "TWEET": //----------------------------------------------------------------------------------------------------------------------
                                         $scope.tweets.splice (0, 0, data.tweet);
                                         pnotify ("tweet tweeted", "info");
                                     break;
 
+
+
                                     // you've now joined the conversation, via click i.e.
-                                    case "JOIN_HASH":
+                                    case "JOIN_HASH": //------------------------------------------------------------------------------------------------------------------
                                         // if we just added the tweets, it'll not be "noticalbel", to do so, we'll use interval
                                         // a lot of reaserach went in to the interval --- i.e. 375 --- NAAAT! [Borat]
 
@@ -345,8 +368,24 @@
                                         }, 375);
                                     break;
 
-                                    default:
-                                        // unknown mode reqyest
+
+
+                                    // step aside ppl, this user has a request
+                                    case "FOLLOW_REQUEST":
+                                        $scope.requests.splice (0, 0, data.request);
+                                        pnotify ("<strong>"+ data.mode.split("_").join(" ") +"</strong> from <strong><i>"+  data.request.from +"</i></strong>", "info");
+                                    break;
+
+
+
+                                    case "SEND_FOLLOW_REQUEST":
+                                        pnotify ("Request sent to <strong>"+ data.request.to +"</strong>", "success");
+                                    break;
+
+
+
+                                    default: //---------------------------------------------------------------------------------------------------------------------------
+                                        console.log (data.mode);
                                     break;
                                 }
 
@@ -362,7 +401,7 @@
 
 
 
-                        // "iYap" concerning messages are sent via a broadcast +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                        // "iMolly" concerning messages are sent via a broadcast +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
                         socket.on ("message", function (data) {
                             if (data.success) {
                                 switch (data.mode) {
@@ -382,8 +421,10 @@
 
                                     // hurray! --- online
                                     case "ONLINE_PLUS":
-                                        pnotify ("user <strong>"+ data.user +"</strong> is now online", "info");
-                                        $scope.online.push (data.user);
+                                        if ($scope.online.indexOf (data.user) === -1 && $routeParams.user !== data.user) {
+                                            pnotify ("user <strong>"+ data.user +"</strong> is now online", "info");
+                                            $scope.online.push (data.user);
+                                        }
                                     break;
 
 
@@ -439,6 +480,8 @@
                         $location.path ("/");
                     }
                 });
+
+
 
                 // Twitter: START ----------------------------------------------------------------------------------------------------------------------------------------
                 $scope.tweet_submit = function () {

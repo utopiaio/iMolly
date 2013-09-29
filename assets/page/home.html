@@ -61,7 +61,7 @@
 
                             <div class="row" style="padding-top:6px;">
                                 <div class="col-md-12">
-                                    <span style="font-size:34px; font-family:QuicksandL;">{{ 141 - tweet.length }}</span>
+                                    <span style="font-size:34px; font-family:QuicksandL;" ng-bind="141 - tweet.length"></span>
                                 </div>
                             </div>
                         </div>
@@ -73,7 +73,7 @@
                         <ul class="list-group" id="tweets">
                             <li class="list-group-item tweet" ng-repeat="tweet in tweets" id="{{ tweet.id }}">
                                 <h4 class="list-group-item-heading text-primary">{{ tweet.by }} <small class="text-muted">@ {{ age(tweet.age) }}</small></h4>
-                                <p class="list-group-item-text" ng-bind-html-unsafe="tweet.tweet | hash"></p>
+                                <p class="list-group-item-text" ng-bind-html-unsafe="tweet | hash:$index"></p>
 
                                 <span class="overlay text-right" ng-class="isOwner({{tweet.owner}});">
                                     <button class="btn btn-sm btn-danger" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="deleteTweet(tweet);">&nbsp;<i class="glyphicon glyphicon-trash"></i>&nbsp;</button>
