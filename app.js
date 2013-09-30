@@ -21,6 +21,7 @@ var https = require ("https");
 var path = require ("path");
 var fs = require ("fs");
 
+var cookie = require ("cookie");
 var connect = require ("connect");
 var socket = require ("socket.io");
 var pg = require ("pg");
@@ -40,21 +41,18 @@ var options = {
     cert:   fs.readFileSync (path.join (__dirname, "/lib/https/public.pem"))
 };
 // session
+var sessionStore = iSocket.getSessionStore ();
 var session = {
     key:    'iMolly',
     cookie: {
         maxAge:     259200000,
         secure:     true
     },
-    store: iSocket.getSessionStore ()
+    store: sessionStore
 };
 
 // cached resources will be stored here
 var cache = {};
-// associates a socket with a user --- so we'll know who disconnected and stuff...
-var sockets = {};
-// this will associates Username with a socket instance
-var online = {};
 // list of Username of users who are on-line --- it'll be returned to the "public"
 var online_p = [];
 
@@ -134,140 +132,152 @@ function home (request, response) {
 
 /// in Rex-Kown-Do we use the buddy system, no more flying solo, you need somebody watching your back at all times! --- and the class was about "self-defense"
 function init (request, response) {
-    if (crypto.logged_in (request)) {
-        // holds ERYthing to be returned to the client
-        var initJSON = {
-            tweet:      {
-                            tweets:     [],
-                            following:  request.session.user.following,
-                            followers:  []
-                        },
-            messages:   [],
-            users:      [],
-            online:     online_p,
-            requests:   [],
-            rooms:      [],
-            hashes:     []
-        };
+    console.log ("initiation testing session...");
+    console.log (request.session);
+    console.log (sessionStore);
 
-        // this will count how many times function 'iSerialFunc' has been called
-        var FIN = 0;
+    ///*
+    sessionStore.get (request.sessionID, function (error, session) {
+        if (!error) {
+            console.log (session);
 
-        /// this is one of those moments where you want Node to be Serial --- sorry if i let you down!
-        /// @param {Object} items
-        /// @param {String} FLAG
-        function iSerialFunc (items, FLAG) {
-            // tweets ----------------------------------------------------------------------------------------------------------------------------------------------------
-            if (FLAG === "DON_TWT") {
-                items.forEach (function (tweet) {
-                    tweet.by === request.session.user.username ? tweet.owner = true : tweet.owner = false;
+            if (crypto.logged_in (session) ) {
+                // holds ERYthing to be returned to the client
+                var initJSON = {
+                    tweet:      {
+                                    tweets:     [],
+                                    following:  session.user.following,
+                                    followers:  []
+                                },
+                    messages:   [],
+                    users:      [],
+                    online:     online_p,
+                    requests:   [],
+                    rooms:      [],
+                    hashes:     []
+                };
+
+                // this will count how many times function 'iSerialFunc' has been called
+                var FIN = 0;
+
+                /// this is one of those moments where you want Node to be Serial --- sorry if i let you down!
+                /// @param {Object} items
+                /// @param {String} FLAG
+                function iSerialFunc (items, FLAG) {
+                    // tweets ----------------------------------------------------------------------------------------------------------------------------------------------------
+                    if (FLAG === "DON_TWT") {
+                        items.forEach (function (tweet) {
+                            tweet.by === session.user.username ? tweet.owner = true : tweet.owner = false;
+                        });
+
+                        initJSON.tweet.tweets = items;
+                    }
+
+                    // messages --------------------------------------------------------------------------------------------------------------------------------------------------
+                    else if (FLAG === "DON_M") {
+                        initJSON.messages = items;
+                    }
+
+                    // all users -------------------------------------------------------------------------------------------------------------------------------------------------
+                    else if (FLAG === "DON_USR") {
+                        initJSON.users = items;
+                    }
+
+                    // following users -------------------------------------------------------------------------------------------------------------------------------------------
+                    else if (FLAG === "DON_F") {
+                        items.forEach (function (follower) {
+                            initJSON.tweet.followers.push (follower.username);
+                        });
+
+                        session.user.followers = initJSON.tweet.followers;
+                    }
+
+                    // request ---------------------------------------------------------------------------------------------------------------------------------------------------
+                    else if (FLAG === "DON_RQ") {
+                        initJSON.requests = items;
+                    }
+
+                    // rooms -----------------------------------------------------------------------------------------------------------------------------------------------------
+                    else if (FLAG === "DON_RM") {
+                        initJSON.rooms = items;
+                    }
+
+                    // #tags -----------------------------------------------------------------------------------------------------------------------------------------------------
+                    else if (FLAG === "DON_#") {
+                        initJSON.hashes = items;
+                    }
+
+                    // DON! ------------------------------------------------------------------------------------------------------------------------------------------------------
+                    if (++FIN === 7) {
+                        // NOW, the client can initiate socket connection, it's all good son
+                        initJSON.success = true;
+                        initJSON.message = "initiation DON!";
+                        qJSON.qJSON (response, initJSON);
+                        //iSocket.io().update (online_p, initJSON.rooms);
+                    }
+                }
+
+                // tweets --------------------------------------------------------------------------------------------------------------------------------------------------------
+                // the user is following nobody! --- what an ass, right
+                if (session.user.following.length === 0) {
+                    pg_client.query ('SELECT id, by, tweet, age(now(), "timestamp") AS age FROM tweet WHERE "by"=$1 ORDER BY "timestamp" DESC LIMIT 50;', [session.user.username], function (error, result) {
+                        !error ? iSerialFunc (result.rows, "DON_TWT") : iSerialFunc ([], "DON_TWT");
+                    });
+                }
+
+                else {
+                    var ifollowing = JSON.stringify (session.user.following);
+                    // preparing for SQL --- SQL-ing is not my thing --- in my defense Django's AWESOME ORM Ruined Me!
+                    ifollowing = ifollowing.replace (/"/g, "'");
+
+                    pg_client.query ('SELECT id, by, tweet, age(now(), "timestamp") AS age FROM tweet WHERE ((by IN (' + ifollowing.slice (1, -1) + ')) OR (by=$1)) ORDER BY timestamp DESC LIMIT 50;', [session.user.username], function (error, result) {
+                        !error ? iSerialFunc (result.rows, "DON_TWT") : iSerialFunc ([], "DON_TWT");
+                    });
+                }
+
+                // ALL users -----------------------------------------------------------------------------------------------------------------------------------------------------
+                pg_client.query ("SELECT username FROM users;", function (error, result) {
+                    !error ? iSerialFunc (result.rows, "DON_USR") : iSerialFunc ([], "DON_USR");
                 });
 
-                initJSON.tweet.tweets = items;
-            }
-
-            // messages --------------------------------------------------------------------------------------------------------------------------------------------------
-            else if (FLAG === "DON_M") {
-                initJSON.messages = items;
-            }
-
-            // all users -------------------------------------------------------------------------------------------------------------------------------------------------
-            else if (FLAG === "DON_USR") {
-                initJSON.users = items;
-            }
-
-            // following users -------------------------------------------------------------------------------------------------------------------------------------------
-            else if (FLAG === "DON_F") {
-                items.forEach (function (follower) {
-                    initJSON.tweet.followers.push (follower.username);
+                // Following users -----------------------------------------------------------------------------------------------------------------------------------------------
+                pg_client.query ("SELECT username FROM users WHERE $1 = ANY (following);", [session.user.username], function (error, result) {
+                    !error ? iSerialFunc (result.rows, "DON_F") : iSerialFunc ([], "DON_F");
                 });
 
-                request.session.user.followers = initJSON.tweet.followers;
+                // messages to and from the user ---------------------------------------------------------------------------------------------------------------------------------
+                pg_client.query ('SELECT * FROM messages WHERE "to"=$1 OR "from"=$1 ORDER BY "timestamp" DESC;', [session.user.username], function (error, result) {
+                    !error ? iSerialFunc (result.rows, "DON_M") : iSerialFunc ([], "DON_M");
+                });
+
+                // requests ------------------------------------------------------------------------------------------------------------------------------------------------------
+                // NOTE: once accepted / declined it's DELETED! 10K rows son!
+                pg_client.query ('SELECT * FROM request WHERE "to"=$1 ORDER BY "timestamp" DESC;', [session.user.username], function (error, result) {
+                    !error ? iSerialFunc (result.rows, "DON_RQ") : iSerialFunc ([], "DON_RQ");
+                });
+
+                // ALL the rooms -------------------------------------------------------------------------------------------------------------------------------------------------
+                pg_client.query ('SELECT * FROM room ORDER BY name ASC;', function (error, result) {
+                    !error ? iSerialFunc (result.rows, "DON_RM") : iSerialFunc ([], "DON_RM");
+                });
+
+                // ALL #tags -----------------------------------------------------------------------------------------------------------------------------------------------------
+                pg_client.query ('SELECT hash, mentions, initiator FROM hash ORDER BY mentions DESC;', function (error, result) {
+                    !error ? iSerialFunc (result.rows, "DON_#") : iSerialFunc ([], "DON_#");
+                });
             }
 
-            // request ---------------------------------------------------------------------------------------------------------------------------------------------------
-            else if (FLAG === "DON_RQ") {
-                initJSON.requests = items;
-            }
-
-            // rooms -----------------------------------------------------------------------------------------------------------------------------------------------------
-            else if (FLAG === "DON_RM") {
-                initJSON.rooms = items;
-            }
-
-            // #tags -----------------------------------------------------------------------------------------------------------------------------------------------------
-            else if (FLAG === "DON_#") {
-                initJSON.hashes = items;
-            }
-
-            // DON! ------------------------------------------------------------------------------------------------------------------------------------------------------
-            if (++FIN === 7) {
-                // NOW, the client can initiate socket connection, it's all good son
-                initJSON.success = true;
-                initJSON.message = "initiation DON!";
-                qJSON.qJSON (response, initJSON);
-                iSocket.io().update (online_p, initJSON.rooms);
+            // we won't be setting the status code to 403 since we want to redirect to home page
+            else {
+                qJSON.qJSON (response, {
+                    success:    false,
+                    code:       "MANEW",
+                    message:    "ማነው  ሚለየው  ሚለየው..."
+                });
             }
         }
-
-        // tweets --------------------------------------------------------------------------------------------------------------------------------------------------------
-        // the user is following nobody! --- what an ass, right
-        if (request.session.user.following.length === 0) {
-            pg_client.query ('SELECT id, by, tweet, age(now(), "timestamp") AS age FROM tweet WHERE "by"=$1 ORDER BY "timestamp" DESC LIMIT 50;', [request.session.user.username], function (error, result) {
-                !error ? iSerialFunc (result.rows, "DON_TWT") : iSerialFunc ([], "DON_TWT");
-            });
-        }
-
-        else {
-            var ifollowing = JSON.stringify (request.session.user.following);
-            // preparing for SQL --- SQL-ing is not my thing --- in my defense Django's AWESOME ORM Ruined Me!
-            ifollowing = ifollowing.replace (/"/g, "'");
-
-            pg_client.query ('SELECT id, by, tweet, age(now(), "timestamp") AS age FROM tweet WHERE ((by IN (' + ifollowing.slice (1, -1) + ')) OR (by=$1)) ORDER BY timestamp DESC LIMIT 50;', [request.session.user.username], function (error, result) {
-                !error ? iSerialFunc (result.rows, "DON_TWT") : iSerialFunc ([], "DON_TWT");
-            });
-        }
-
-        // ALL users -----------------------------------------------------------------------------------------------------------------------------------------------------
-        pg_client.query ("SELECT username FROM users;", function (error, result) {
-            !error ? iSerialFunc (result.rows, "DON_USR") : iSerialFunc ([], "DON_USR");
-        });
-
-        // Following users -----------------------------------------------------------------------------------------------------------------------------------------------
-        pg_client.query ("SELECT username FROM users WHERE $1 = ANY (following);", [request.session.user.username], function (error, result) {
-            !error ? iSerialFunc (result.rows, "DON_F") : iSerialFunc ([], "DON_F");
-        });
-
-        // messages to and from the user ---------------------------------------------------------------------------------------------------------------------------------
-        pg_client.query ('SELECT * FROM messages WHERE "to"=$1 OR "from"=$1 ORDER BY "timestamp" DESC;', [request.session.user.username], function (error, result) {
-            !error ? iSerialFunc (result.rows, "DON_M") : iSerialFunc ([], "DON_M");
-        });
-
-        // requests ------------------------------------------------------------------------------------------------------------------------------------------------------
-        // NOTE: once accepted / declined it's DELETED! 10K rows son!
-        pg_client.query ('SELECT * FROM request WHERE "to"=$1 ORDER BY "timestamp" DESC;', [request.session.user.username], function (error, result) {
-            !error ? iSerialFunc (result.rows, "DON_RQ") : iSerialFunc ([], "DON_RQ");
-        });
-
-        // ALL the rooms -------------------------------------------------------------------------------------------------------------------------------------------------
-        pg_client.query ('SELECT * FROM room ORDER BY name ASC;', function (error, result) {
-            !error ? iSerialFunc (result.rows, "DON_RM") : iSerialFunc ([], "DON_RM");
-        });
-
-        // ALL #tags -----------------------------------------------------------------------------------------------------------------------------------------------------
-        pg_client.query ('SELECT hash, mentions, initiator FROM hash ORDER BY mentions DESC;', function (error, result) {
-            !error ? iSerialFunc (result.rows, "DON_#") : iSerialFunc ([], "DON_#");
-        });
-    }
-
-    // we won't be setting the status code to 403 since we want to redirect to home page
-    else {
-        qJSON.qJSON (response, {
-            success:    false,
-            code:       "MANEW",
-            message:    "ማነው  ሚለየው  ሚለየው..."
-        });
-    }
+    });
+    //*/
 }
 
 
@@ -311,7 +321,6 @@ function login (request, response, next) {
                     // so far so good... online directory check...
                     if (online_p.indexOf (request.body.username) === -1) {
                         online_p.push (request.body.username);
-                        online [result.rows[0].username] = request.session.user;
                     }
                 }
 

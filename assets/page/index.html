@@ -186,6 +186,8 @@
                 $scope.online = {};
                 $scope.hashes = [];
 
+
+
                 // for uno momento we'll be getting initiating data the old school way by calling init! --- cool name uh!
                 $http ({
                     method: "POST",
@@ -221,10 +223,10 @@
                         });
 
                         $scope.message = {
-                            iInbox: iInbox,
-                            iSent: iSent,
-                            iInboxNotRead: iInboxNotRead,
-                            iSentNotRead: iSentNotRead
+                            iInbox:         iInbox,
+                            iSent:          iSent,
+                            iInboxNotRead:  iInboxNotRead,
+                            iSentNotRead:   iSentNotRead
                         };
 
                         // here we'll have the BARE data of rooms @ data.rooms
@@ -357,7 +359,7 @@
                                         var iAdd = setInterval (function () {
                                             // we're making sure the hashed tweet isn't already "in" and is following stuff and stuff...
                                             // give me a break am dying right now ---- i have a cold!
-                                            if ($scope.following !== null && $scope.following.indexOf (data.tweet[index].by) === -1 && $routeParams.user !== data.tweet[index].by) {
+                                            if ($scope.following.indexOf (data.tweet[index].by) === -1 && $routeParams.user !== data.tweet[index].by) {
                                                 $scope.tweets.splice (0, 0, data.tweet[index]);
                                             }
 
@@ -371,21 +373,15 @@
 
 
                                     // step aside ppl, this user has a request
-                                    case "FOLLOW_REQUEST":
+                                    case "FOLLOW_REQUEST": //-------------------------------------------------------------------------------------------------------------
                                         $scope.requests.splice (0, 0, data.request);
                                         pnotify ("<strong>"+ data.mode.split("_").join(" ") +"</strong> from <strong><i>"+  data.request.from +"</i></strong>", "info");
                                     break;
 
 
 
-                                    case "SEND_FOLLOW_REQUEST":
-                                        pnotify ("Request sent to <strong>"+ data.request.to +"</strong>", "success");
-                                    break;
-
-
-
-                                    default: //---------------------------------------------------------------------------------------------------------------------------
-                                        console.log (data.mode);
+                                    case "SEND_FOLLOW_REQUEST": //--------------------------------------------------------------------------------------------------------
+                                        pnotify ("request sent to <strong>"+ data.request.to +"</strong>", "success");
                                     break;
                                 }
 
@@ -406,21 +402,23 @@
                             if (data.success) {
                                 switch (data.mode) {
                                     // a tweet has been deleted!
-                                    case "DELETE_TWEET":
+                                    case "DELETE_TWEET": //---------------------------------------------------------------------------------------------------------------
                                         console.log ("removing tweet with id [%s]", data.tweet.id);
                                         // here, the deleting will be done quietly --- i.e. there won't be any pnotify
                                         $("#"+ data.tweet.id).hide("fade", 185);
                                     break;
 
 
-                                    // someone in the loop has tweeted --- PUSH-IT!
-                                    case "TWEET":
+
+                                    // someone in the 'loop' has tweeted --- PUSH-IT! on TOP i.e.
+                                    case "TWEET": //----------------------------------------------------------------------------------------------------------------------
                                         $scope.tweets.splice (0, 0, data.tweet);
                                     break;
 
 
+
                                     // hurray! --- online
-                                    case "ONLINE_PLUS":
+                                    case "ONLINE_PLUS": //-----------------------------------------------------------------------------------------------------------------
                                         if ($scope.online.indexOf (data.user) === -1 && $routeParams.user !== data.user) {
                                             pnotify ("user <strong>"+ data.user +"</strong> is now online", "info");
                                             $scope.online.push (data.user);
@@ -428,8 +426,9 @@
                                     break;
 
 
+
                                     // we are in the mist of "conversation"
-                                    case "MENTION_PLUS":
+                                    case "MENTION_PLUS": //---------------------------------------------------------------------------------------------------------------
                                         $scope.hashes.forEach (function (hash, index) {
                                             if (data.hash.hash === hash.hash) {
                                                 $scope.hashes[index] = data.hash;
@@ -438,18 +437,21 @@
                                     break;
 
 
+
                                     // we are in the presence of a new hash --- rise-up, rise-up
                                     // am really good with naming modes aren't i...
-                                    case "NEW_HASH":
+                                    case "NEW_HASH": //-------------------------------------------------------------------------------------------------------------------
                                         $scope.hashes.splice (0, 0, data.hash);
                                         // i don't know about you but i would like to know new hash's out there...
                                         $routeParams.user !== data.hash.initiator ? pnotify ("<strong>#"+ data.hash.hash +"</strong> started by <strong>"+ data.hash.initiator +"</strong>", "info") : pnotify ("<strong>#"+ data.hash.hash +"</strong> started", "info");
                                     break;
 
+
+
                                     // tweet with a hash
                                     // here'it'll be a little different, we should make sure the user isn't already 'following' the user
                                     // otherwise we'll have a double tweet in our hands!
-                                    case "HASH_TWEET":
+                                    case "HASH_TWEET": //-----------------------------------------------------------------------------------------------------------------
                                         if ($routeParams.user !== data.tweet.by) {
                                             // the user isn't following anyone
                                             if ($scope.following === null)
@@ -461,11 +463,17 @@
                                         }
                                     break;
 
-                                    default:
+
+
+                                    // BOOOOOOOOOOOOOOOOOO!
+                                    // user 'logged' out
+                                    case "DISCONNECT": //-----------------------------------------------------------------------------------------------------------------
+                                        $scope.online.splice ($scope.online.indexOf (data.user), 1);
+                                        pnotify ("<strong>"+ data.user +"</strong> is now offline", "info");
                                     break;
                                 }
 
-                                // telling digest of the changes...
+                                // telling digest to apply changes
                                 $rootScope.$apply();
                             }
 
