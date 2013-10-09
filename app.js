@@ -40,7 +40,7 @@ var options = {
     key:    fs.readFileSync (path.join (__dirname, "/lib/https/private.pem")),
     cert:   fs.readFileSync (path.join (__dirname, "/lib/https/public.pem"))
 };
-// session
+// session, set to 3 days
 var sessionStore = iSocket.getSessionStore ();
 var session = {
     key:    'iMolly',
@@ -53,8 +53,6 @@ var session = {
 
 // cached resources will be stored here
 var cache = {};
-// list of Username of users who are on-line --- it'll be returned to the "public"
-var online_p = [];
 
 /// adding a couple more of MIME's on the compression list of connect...
 /// @param {Object} request
@@ -93,7 +91,7 @@ var server = https.createServer (options, app).listen (port, function () {
     pg_client.connect (function (error) {
         // if there's an error connecting to the database server we'll be killing the whole thing!
         if (error) {
-            console.error ('Dude, i was unable to connect to Postgres', err);
+            console.error ('Dude, i was unable to connect to DB.\n', error);
             process.exit (1);
         }
 
@@ -120,8 +118,8 @@ function home (request, response) {
             flag:       "r"
         });
 
-        response.setHeader('Content-Type', 'text/html');
-        response.setHeader('Content-Length', Buffer.byteLength (body + "<input type='hidden' id='csrf' name='_csrf' value='" + request.session._csrf + "' />"));
+        response.setHeader ('Content-Type', 'text/html');
+        response.setHeader ('Content-Length', Buffer.byteLength (body + "<input type='hidden' id='csrf' name='_csrf' value='" + request.session._csrf + "' />"));
         response.end(body + "<input type='hidden' id='csrf' name='_csrf' value='" + request.session._csrf + "' />");
         // we'll be caching only the body --- the csrf will be unique for ERY request, well duh it's CSRF!
         cache.body = body;
@@ -132,15 +130,9 @@ function home (request, response) {
 
 /// in Rex-Kown-Do we use the buddy system, no more flying solo, you need somebody watching your back at all times! --- and the class was about "self-defense"
 function init (request, response) {
-    console.log ("initiation testing session...");
-    console.log (request.session);
-    console.log (sessionStore);
-
     ///*
     sessionStore.get (request.sessionID, function (error, session) {
         if (!error) {
-            console.log (session);
-
             if (crypto.logged_in (session) ) {
                 // holds ERYthing to be returned to the client
                 var initJSON = {
@@ -151,7 +143,7 @@ function init (request, response) {
                                 },
                     messages:   [],
                     users:      [],
-                    online:     online_p,
+                    online:     iSocket.online_p(),
                     requests:   [],
                     rooms:      [],
                     hashes:     []
@@ -213,7 +205,8 @@ function init (request, response) {
                         initJSON.success = true;
                         initJSON.message = "initiation DON!";
                         qJSON.qJSON (response, initJSON);
-                        //iSocket.io().update (online_p, initJSON.rooms);
+                        // we'll be updating room list on ERY-login, socket update is available too
+                        iSocket.rooms (initJSON.rooms);
                     }
                 }
 
@@ -283,13 +276,24 @@ function init (request, response) {
 
 
 /// USA-USA-USA
-function login (request, response, next) {
+function login (request, response) {
     var iJSON = {};
     // yep, all things are in small cases...
     request.body.username = request.body.username.toLowerCase();
 
+    // salva --- wait your turn son --- the other dude is logged in with your shit
+    if (iSocket.online_p().indexOf (request.body.username) !== -1) {
+        iJSON = {
+            success:    false,
+            code:       "SALVA",
+            message:    "Son, you've been compromised.</br><strong>ABORT! ABORT!</strong>"
+        };
+
+        qJSON.qJSON (response, iJSON);
+    }
+
     // clean slate...
-    if (request.body.password.length > 5 && request.session.user === undefined) {
+    else if (request.body.password.length > 5 && request.session.user === undefined) {
         // two factor authorization my ass!
         pg_client.query ("SELECT * FROM users WHERE username=$1 AND password=$2;", [request.body.username, crypto.sha512 (request.body.password)], function (error, result) {
             if (error) {
@@ -317,11 +321,6 @@ function login (request, response, next) {
                         followers:  [],
                         hashes:     []
                     };
-
-                    // so far so good... online directory check...
-                    if (online_p.indexOf (request.body.username) === -1) {
-                        online_p.push (request.body.username);
-                    }
                 }
 
                 // BIG surprise here! --- we probably got injected....funny - "injected" --- or simply Username and password did not match

@@ -11,6 +11,7 @@
 
     <body ng-app="iMolly">
         <div ng-view="iView"></div>
+
         <script src="static/js/jumbo.js"></script>
         <script src="static/js/script.js"></script>
         <script type="text/javascript">
@@ -18,7 +19,6 @@
             var socket = null;
             var scope = null;
             var rootScope = null;
-            var routeParams = null;
 
             /// since ERY tweet is escaped before being saved in to the database, we'll be using `ng-bind-html-unsafe` -- we're going to be scanning for # tags and @
             /// the filter module has been greatly tweaked for performance ---- it'll be hit only once --- before it was hit ERY second
@@ -38,14 +38,14 @@
                             tweet.tweet.split (/[ \n]/).forEach (function (word) {
                                 // we have a #tag
                                 if (word.match (/^#[a-zA-Z0-9_]+$/)) {
-                                    HTML += '<a href="#/iMolly/'+ routeParams.user +'" onclick="joinTheHash(\''+ word.slice(1) +'\');" class="text-info" style="text-decoration:none;"><i>'+ word +'</i></a> ';
+                                    HTML += '<a href="#/iMolly/'+ scope.user +'" onclick="joinTheHash(\''+ word.slice(1) +'\');" class="text-info" style="text-decoration:none;"><i>'+ word +'</i></a> ';
                                 }
 
                                 // we have a @user
                                 // we'll also be checking for validity on user --- i.e. it must exist before we link it
                                 // TODO: change the LAME username verification scheme!
                                 else if (word.match (/^@[a-zA-Z0-9_]+$/) && userList.indexOf('{"username":"'+ word.slice(1).toLowerCase() + '"}') !== -1) {
-                                    HTML += '<a href="#/iMolly/'+ routeParams.user +'" onclick="followUser(\''+ word.slice(1).toLowerCase() +'\');" class="text-info" style="text-decoration:none;"><i>'+ word.toLowerCase() +'</i></a> ';
+                                    HTML += '<a href="#/iMolly/'+ scope.user +'" onclick="followUser(\''+ word.slice(1).toLowerCase() +'\');" class="text-info" style="text-decoration:none;"><i>'+ word.toLowerCase() +'</i></a> ';
                                 }
 
                                 else {
@@ -174,7 +174,6 @@
             function home ($scope, $http, $location, $routeParams, $rootScope) {
                 scope = $scope;
                 rootScope = $rootScope;
-                routeParams = $routeParams;
 
                 $scope.tweet = '';
                 $scope.tweets = [];
@@ -185,6 +184,9 @@
                 $scope.rooms = {iPublic: [], iPrivate: [], iMember: []};
                 $scope.online = {};
                 $scope.hashes = [];
+                // this is used to ease following/sending requet to the user + i don't know how to access the $routeParams at the template side so is $scoped it!
+                // go ahead sue me!
+                $scope.user = $routeParams.user;
 
 
 
@@ -375,13 +377,27 @@
                                     // step aside ppl, this user has a request
                                     case "FOLLOW_REQUEST": //-------------------------------------------------------------------------------------------------------------
                                         $scope.requests.splice (0, 0, data.request);
-                                        pnotify ("<strong>"+ data.mode.split("_").join(" ") +"</strong> from <strong><i>"+  data.request.from +"</i></strong>", "info");
+                                        pnotify ("<strong>"+ data.request.type +"</strong> request from <strong><i>"+  data.request.from +"</i></strong>", "info");
                                     break;
 
 
 
                                     case "SEND_FOLLOW_REQUEST": //--------------------------------------------------------------------------------------------------------
                                         pnotify ("request sent to <strong>"+ data.request.to +"</strong>", "success");
+                                    break;
+
+
+                                    case "ACCEPT_REQUEST":
+                                        $scope.followers.push (data.from);
+                                        $scope.requests.splice (data.index, 1);
+                                        pnotify ("User <strong>"+ data.from +"</strong> is now following you", "info");
+                                    break;
+
+
+                                    // you're lucky enough to see your request being accepted
+                                    case "REQUEST_ACCEPTED":
+                                        $scope.following = data.following;
+                                        pnotify ("User <strong>"+ data.acceptor +"</strong> has accepted you", "info");
                                     break;
                                 }
 
@@ -467,6 +483,7 @@
 
                                     // BOOOOOOOOOOOOOOOOOO!
                                     // user 'logged' out
+                                    // NOTE: this is will be triggered when a page is refreshed, so think long and HARD [Black Guy] before hitting F5
                                     case "DISCONNECT": //-----------------------------------------------------------------------------------------------------------------
                                         $scope.online.splice ($scope.online.indexOf (data.user), 1);
                                         pnotify ("<strong>"+ data.user +"</strong> is now offline", "info");
@@ -593,6 +610,26 @@
                     return room.members.indexOf($routeParams.user) === -1 ? "hide" : "";
                 };
                 // Room: END ---------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+                // Request: START ----------------------------------------------------------------------------------------------------------------------------------------
+                /// well this accepts iRequest --- amazing is it not
+                $scope.acceptRequest = function (request, index) {
+                    console.log ("Accepting Request from [%s]...", request.from);
+                    socket.emit ("message", {request: request, index: index, mode: "ACCEPT_REQUEST"});
+                }
+
+                /// and this declines it --- oh, no you didin' --- neck roll
+                $scope.declineRequest = function (request, index) {
+                    console.log ("Declining Request from [%s]...", request.from);
+                    socket.emit ("message", {request: request, index: index, mode: "DECLINE_REQUEST"});
+                }
+                // Request: END ------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+                /// this enables the cool active class on the nav on the side son
                 bind_menu();
             }
 

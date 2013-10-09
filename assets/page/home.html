@@ -32,32 +32,29 @@
                         <span class="badge" ng-bind="online.length"></span>
                         <span class="badge" ng-bind="users.length"></span>
                     </button>
-
-                    <!--
-                    <button class="text-left list-group-item" activate="Logout">
-                        <i class="glyphicon glyphicon-log-out"></i>&nbsp;&nbsp;Logout
-                    </button>
-                    -->
                 </div>
             </div>
         </div>
-        <!-- side navigation: END --------------------------------------------------------------------------------------------------------------------------------------->
+        <!-- side navigation: END ------------------------------------------------------------------------------------------------------------------------------------ -->
+
 
 
         <div class="col-md-6 text-center" style="border-left:1px solid rgba(64, 64, 64, 0.085); border-right:1px solid rgba(64, 64, 64, 0.085);" role="main">
-            <!-- we'll not using templates and stuff since `updates` are carried out via Sockets -->
 
+
+
+            <!-- iTweet: START --------------------------------------------------------------------------------------------------------------------------------------- -->
             <div id="iTweet" class="iMolly">
                 <div class="row" style="padding:4px 0px 18px 0px;">
                     <form name="tweet_form" role="form" novalidate ng-submit="tweet_submit()">
                         <div class="col-md-9">
-                            <textarea class="form-control" rows=3 style="resize:none; margin-bottom:12px;" placeholder="እቴም ሜቴ የሎሚ ሽታ ያ ሰውዬ ምን አለሽ ማታ?" ng-model="tweet" minlength="1" maxlength="141" required></textarea>
+                            <textarea class="form-control" rows=3 style="resize:none; margin-bottom:12px; border-radius:0px;" placeholder="እቴም ሜቴ የሎሚ ሽታ ያ ሰውዬ ምን አለሽ ማታ?" ng-model="tweet" minlength="1" maxlength="141" required></textarea>
                         </div>
 
                         <div class="col-md-3">
                             <div class="row">
                                 <div class="col-md-12">
-                                    <button ng-disabled="tweet_form.$invalid" class="btn btn-info btn-block">iTweet</button>
+                                    <button ng-disabled="tweet_form.$invalid" class="btn btn-info btn-block" style="border-radius:0px;">iTweet</button>
                                 </div>
                             </div>
 
@@ -73,7 +70,7 @@
                 <div class="row">
                     <div class="col-md-12 text-left">
                         <ul class="list-group" id="tweets">
-                            <li class="list-group-item tweet" ng-repeat="tweet in tweets" id="{{ tweet.id }}">
+                            <li class="list-group-item tweet" ng-repeat="tweet in tweets" id="{{ tweet.id }}" style="border-radius: 0px;">
                                 <h4 class="list-group-item-heading text-primary">{{ tweet.by }} <small class="text-muted">@ {{ age(tweet.age) }}</small></h4>
                                 <p class="list-group-item-text" ng-bind-html-unsafe="tweet | hash:$index"></p>
 
@@ -85,11 +82,15 @@
                     </div>
                 </div>
             </div>
+            <!-- iTweet: END ----------------------------------------------------------------------------------------------------------------------------------------- -->
 
+
+
+            <!-- iMessage: START ------------------------------------------------------------------------------------------------------------------------------------- -->
             <div id="iMessage" class="iMolly hide">
                 <div class="row">
                     <div class="col-md-10 col-md-offset-1">
-                        <input type="text" placeholder="Search" class="form-control input-lg" ng-model="query" />
+                        <input type="text" placeholder="Search" class="form-control input-lg" ng-model="query" style="border-radius:0px;" />
                     </div>
                 </div>
 
@@ -103,7 +104,7 @@
                     <div class="tab-content text-left" style="padding: 12px 8px 12px 8px;">
                         <div id="inbox" class="tab-pane fade in active">
                             <ul class="list-group">
-                                <li class="list-group-item tweet" ng-repeat="inbox in message.iInbox | filter:query" ng-class="isFresh({{inbox.fresh == true}});" id="{{ inbox.id }}">
+                                <li class="list-group-item tweet" ng-repeat="inbox in message.iInbox | filter:query" ng-class="isFresh({{inbox.fresh == true}});" id="{{ inbox.id }}" style="border-radius: 0px;">
                                     <h4 class="list-group-item-heading">{{ inbox.from }} @ <small>{{ inbox.timestamp|date:"MMMM dd, y @ hh:mm:ss" }}</small></h4>
                                     <p class="list-group-item-text">{{ inbox.message }}</p>
 
@@ -119,7 +120,7 @@
 
                         <div id="sent" class="tab-pane fade in">
                             <ul class="list-group">
-                                <li class="list-group-item tweet" ng-repeat="sent in message.iSent | filter:query" ng-class="isFresh({{sent.fresh == true}});" id="{{ sent.id }}">
+                                <li class="list-group-item tweet" ng-repeat="sent in message.iSent | filter:query" ng-class="isFresh({{sent.fresh == true}});" id="{{ sent.id }}" style="border-radius: 0px;">
                                     <h4 class="list-group-item-heading">{{ sent.to }} @ <small>{{ sent.timestamp|date:"MMMM dd, y @ hh:mm:ss" }}</small></h4>
                                     <p class="list-group-item-text">{{ sent.message }}</p>
 
@@ -138,7 +139,11 @@
                     </div>
                 </div>
             </div>
+            <!-- iMessage: END --------------------------------------------------------------------------------------------------------------------------------------- -->
 
+
+
+            <!-- iRoom: START ---------------------------------------------------------------------------------------------------------------------------------------- -->
             <div id="iRoom" class="iMolly hide">
                 <div class="panel-group" id="accordion">
                     <div class="panel panel-default text-left">
@@ -176,8 +181,35 @@
                     </div>
                 </div>
             </div>
+            <!-- iRoom: START ---------------------------------------------------------------------------------------------------------------------------------------- -->
 
-            <div id="iRequest" class="iMolly hide">Requests</div>
+
+            <!-- iRequest: START ------------------------------------------------------------------------------------------------------------------------------------- -->
+            <div id="iRequest" class="iMolly hide text-left">
+                <div ng-show="requests.length == 0">
+                    <h3 class="text-muted" style="margin-bottom:0px;">Dude, you have no iRequests!</h3>
+                    <small class="text-muted">FYI this means you're BORING or FAT or even worse - BOTH!</small>
+                </div>
+
+                <ul class="list-group">
+                    <li class="list-group-item tweet" style="border-radius: 0px;" ng-repeat="request in requests">
+                        <span>{{ request.type }}</span></br>
+                        <small class="text-muted">{{ request.timestamp|date:"MMMM dd, y @ hh:mm:ss" }}</small></br>
+                        <a style="font-size:18px; text-decoration:none;" href="#/iMolly/{{ + user }}" onclick="followUser('{{request.from}}');">@{{ request.from }}</a>
+
+                        <span class="overlay">
+                            <div class="btn-group" style="position:absolute; top:0px; right:0px;">
+                                <button type="button" class="btn btn-primary" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="acceptRequest(request, $index);"><i class="glyphicon glyphicon-thumbs-up"></i></button>
+                                <button type="button" class="btn btn-danger" style="border-radius:0px 0px 0px 0px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="declineRequest(request, $index);">&nbsp;<i class="glyphicon glyphicon-thumbs-down"></i>&nbsp;</button>
+                            </div>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+            <!-- iRequest: START -------------------------------------------------------------------------------------------------------------------------------------- -->
+
+
+
             <div id="iFinder" class="iMolly hide">iFinder</div>
             <div id="Logout" class="iMolly hide">Logout</div>
         </div>
