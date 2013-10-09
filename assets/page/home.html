@@ -195,7 +195,7 @@
                     <li class="list-group-item tweet" style="border-radius: 0px;" ng-repeat="request in requests">
                         <span>{{ request.type }}</span></br>
                         <small class="text-muted">{{ request.timestamp|date:"MMMM dd, y @ hh:mm:ss" }}</small></br>
-                        <a style="font-size:18px; text-decoration:none;" href="#/iMolly/{{ + user }}" onclick="followUser('{{request.from}}');">@{{ request.from }}</a>
+                        <a style="font-size:18px; text-decoration:none;" href="#/iMolly/{{ user }}" onclick="followUser('{{request.from}}');">@{{ request.from }}</a>
 
                         <span class="overlay">
                             <div class="btn-group" style="position:absolute; top:0px; right:0px;">
@@ -206,12 +206,44 @@
                     </li>
                 </ul>
             </div>
-            <!-- iRequest: START -------------------------------------------------------------------------------------------------------------------------------------- -->
+            <!-- iRequest: START ------------------------------------------------------------------------------------------------------------------------------------- -->
 
 
+            <!-- iFinder: START -------------------------------------------------------------------------------------------------------------------------------------- -->
+            <div id="iFinder" class="iMolly hide text-left">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
+                        <input type="text" placeholder="Search" class="form-control input-lg" ng-model="iQuery" style="border-radius:0px;" />
+                    </div>
+                </div>
 
-            <div id="iFinder" class="iMolly hide">iFinder</div>
-            <div id="Logout" class="iMolly hide">Logout</div>
+                <h4 class="col-md-offset-1 text-muted" style="margin-top:16px;">@User&nbsp;&nbsp;<span style="font-family:QuicksandL; font-size:28px;">{{ (users | filter:iQuery).length }}</span></h4>
+
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
+                        <ul class="list-group">
+                            <li class="list-group-item" style="border-radius: 0px;" ng-repeat="iuser in users | filter:iQuery">
+                                <a style="font-size:18px; text-decoration:none;" href="#/iMolly/{{ user }}" onclick="followUser('{{iuser.username}}');">@{{ iuser.username }}</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h4 class="col-md-offset-1 text-muted" style="margin-top:16px;">@Room&nbsp;&nbsp;<span style="font-family:QuicksandL; font-size:28px;">{{ (rooms.iPublic.concat (rooms.iPrivate) | filter:iQuery).length }}</span></h4>
+
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
+                        <ul class="list-group">
+                            <li class="list-group-item" style="border-radius: 0px;" ng-repeat="room in rooms.iPublic.concat (rooms.iPrivate) | filter:iQuery">
+                                <span style="color: rgba(51, 51, 51, 0.75); font-size: 18px;"><i ng-class="isPublic(room.public);"></i>&nbsp;{{ room.name }}</span></br>
+                                <span>By&nbsp;<small class="text-muted">{{ room.owner }}</small></span></br>
+                                <span style="color: rgba(51, 51, 51, 0.75); font-size: 18px;">{{ room.members.length }}&nbsp;Members</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- iFinder: END ---------------------------------------------------------------------------------------------------------------------------------------- -->
         </div>
     </div>
 </div>
