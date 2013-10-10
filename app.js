@@ -96,14 +96,10 @@ var server = https.createServer (options, app).listen (port, function () {
         }
 
         else {
-            // creating our table
+            // creating our tables...
             pg_client.query ("CREATE TABLE IF NOT EXISTS users (id serial NOT NULL, username character varying(256), password character varying(256), following character varying(256)[] DEFAULT '{}'::character varying[], CONSTRAINT \"PK\" PRIMARY KEY (id), CONSTRAINT username UNIQUE (username)); CREATE TABLE IF NOT EXISTS tweet (id serial NOT NULL, by character varying(256), tweet character varying(141), \"timestamp\" timestamp without time zone DEFAULT now(), CONSTRAINT pk PRIMARY KEY (id)); CREATE TABLE IF NOT EXISTS room (id serial NOT NULL, name character varying(64), owner character varying(256), members character varying(256)[] DEFAULT '{}'::character varying[], public boolean DEFAULT true, CONSTRAINT pk_room PRIMARY KEY (id), CONSTRAINT username_fk FOREIGN KEY (owner) REFERENCES users (username) MATCH SIMPLE ON UPDATE NO ACTION ON DELETE CASCADE, CONSTRAINT name UNIQUE (name)); CREATE TABLE IF NOT EXISTS hash (id serial NOT NULL, hash character varying(140), mentions integer DEFAULT 1, initiator character varying(256), mention_ts timestamp without time zone[] DEFAULT '{}'::timestamp without time zone[], CONSTRAINT pk_hash PRIMARY KEY (id), CONSTRAINT fk_initiator FOREIGN KEY (initiator) REFERENCES users (username) MATCH SIMPLE ON UPDATE CASCADE ON DELETE NO ACTION); CREATE TABLE IF NOT EXISTS messages (id serial NOT NULL, \"to\" character varying(256), \"from\" character varying(256), \"timestamp\" timestamp without time zone DEFAULT now(), seen boolean DEFAULT false, message character varying(2048), CONSTRAINT pk_message PRIMARY KEY (id), CONSTRAINT \"from\" FOREIGN KEY (\"from\") REFERENCES users (username) MATCH SIMPLE ON UPDATE CASCADE ON DELETE CASCADE, CONSTRAINT \"to\" FOREIGN KEY (\"to\") REFERENCES users (username) MATCH SIMPLE ON UPDATE CASCADE ON DELETE CASCADE); CREATE TABLE IF NOT EXISTS request (id serial NOT NULL, \"from\" character varying(256), \"to\" character varying(256), type character varying(64), \"timestamp\" timestamp without time zone DEFAULT now(), CONSTRAINT pk_request PRIMARY KEY (id), CONSTRAINT from_fk FOREIGN KEY (\"from\") REFERENCES users (username) MATCH SIMPLE ON UPDATE CASCADE ON DELETE CASCADE, CONSTRAINT to_fk FOREIGN KEY (\"to\") REFERENCES users (username) MATCH SIMPLE ON UPDATE CASCADE ON DELETE CASCADE);", function (error, result) {
                 if (error) {
                     console.log (error);
-                }
-
-                else {
-                    console.log (result);
                 }
             });
 
@@ -288,6 +284,10 @@ function init (request, response) {
 
 /// USA-USA-USA
 function login (request, response) {
+    sessionStore.get (request.session.id, function (error, session) {
+        console.log (session);
+    });
+
     var iJSON = {};
     // yep, all things are in small cases...
     request.body.username = request.body.username.toLowerCase();

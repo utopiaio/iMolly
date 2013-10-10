@@ -134,7 +134,7 @@
                         </div>
 
                         <div id="compose" class="tab-pane fade in">
-                            compose
+                            Coming Soon
                         </div>
                     </div>
                 </div>
@@ -145,41 +145,7 @@
 
             <!-- iRoom: START ---------------------------------------------------------------------------------------------------------------------------------------- -->
             <div id="iRoom" class="iMolly hide">
-                <div class="panel-group" id="accordion">
-                    <div class="panel panel-default text-left">
-                        <div class="panel-heading">
-                            <h4 class="panel-title text-muted"><a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#iOptions" style="text-decoration:none;">Search, Join, Delete or Leave Rooms</a></h4>
-                        </div>
-
-                        <div id="iOptions" class="panel-collapse collapse" style="background-color:rgba(224, 224, 224, 0.075)">
-                            <div class="panel-body">
-                                <div class="row">
-                                    <div class="col-md-10 col-md-offset-1">
-                                        <input type="text" placeholder="Search Rooms" class="form-control input-lg" ng-model="queryR" />
-                                    </div>
-                                </div>
-
-                                <div class="row" style="padding:18px 0px 18px 0px;">
-                                    <div class="col-md-offset-1 col-md-10">
-                                        <ul class="list-group">
-                                            <li class="list-group-item tweet" ng-repeat="room in rooms.iPublic.concat(rooms.iPrivate) | filter:queryR" style="padding:12px;" id="{{ room.id }}">
-                                                <i class="text-muted" ng-class="isPublic({{room.public}});"></i>&nbsp;<span class="text-primary">{{ room.name }}</span>&nbsp;<small class="text-muted">{{ room.owner }}</small>
-                                                <span style="position:absolute; left:50%;" class="badge">{{ room.members.length }}</span>
-
-                                                <span class="overlay text-right">
-                                                    <div class="btn-group">
-                                                        <button type="button" class="btn btn-sm btn-danger" ng-class="isCreator(room.owner)" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="deleteRoom(room);">&nbsp;<i class="glyphicon glyphicon-trash"></i>&nbsp;</button>
-                                                        <button type="button" class="btn btn-sm btn-danger" ng-class="isMember(room)" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="leaveRoom(room);">&nbsp;<i class="glyphicon glyphicon-trash"></i>&nbsp;</button>
-                                                    </div>
-                                                </span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                Coming Soon
             </div>
             <!-- iRoom: START ---------------------------------------------------------------------------------------------------------------------------------------- -->
 
@@ -217,27 +183,56 @@
                     </div>
                 </div>
 
-                <h4 class="col-md-offset-1 text-muted" style="margin-top:16px;">@User&nbsp;&nbsp;<span style="font-family:QuicksandL; font-size:28px;">{{ (users | filter:iQuery).length }}</span></h4>
+                <h4 class="col-md-offset-1 text-muted" style="margin-top:16px;" ng-show="(users | filter:iQuery).length">@User&nbsp;&nbsp;<span style="font-family:QuicksandL; font-size:28px;">{{ (users | filter:iQuery).length }}</span></h4>
 
                 <div class="row">
                     <div class="col-md-10 col-md-offset-1">
                         <ul class="list-group">
-                            <li class="list-group-item" style="border-radius: 0px;" ng-repeat="iuser in users | filter:iQuery">
+                            <li class="list-group-item tweet" style="border-radius: 0px;" ng-repeat="iuser in users | filter:iQuery">
                                 <a style="font-size:18px; text-decoration:none;" href="#/iMolly/{{ user }}" onclick="followUser('{{iuser.username}}');">@{{ iuser.username }}</a>
+
+                                <span class="overlay text-right">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-primary" ng-show="isFollowing (iuser);"style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="unfollow (iuser);">&nbsp;<i class="glyphicon glyphicon-new-window"></i>&nbsp;</button>
+                                        <button type="button" class="btn btn-danger" ng-show="isSelf (iuser);" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="nukeAccount (iuser);">&nbsp;<i class="glyphicon glyphicon-trash"></i>&nbsp;</button>
+                                    </div>
+                                </span>
                             </li>
                         </ul>
                     </div>
                 </div>
 
-                <h4 class="col-md-offset-1 text-muted" style="margin-top:16px;">@Room&nbsp;&nbsp;<span style="font-family:QuicksandL; font-size:28px;">{{ (rooms.iPublic.concat (rooms.iPrivate) | filter:iQuery).length }}</span></h4>
+                <h4 class="col-md-offset-1 text-muted" style="margin-top:16px;" ng-show="(rooms.iPublic.concat (rooms.iPrivate) | filter:iQuery).length">Room&nbsp;&nbsp;<span style="font-family:QuicksandL; font-size:28px;">{{ (rooms.iPublic.concat (rooms.iPrivate) | filter:iQuery).length }}</span></h4>
 
                 <div class="row">
                     <div class="col-md-10 col-md-offset-1">
                         <ul class="list-group">
-                            <li class="list-group-item" style="border-radius: 0px;" ng-repeat="room in rooms.iPublic.concat (rooms.iPrivate) | filter:iQuery">
+                            <li class="list-group-item tweet" style="border-radius: 0px;" ng-repeat="room in rooms.iPublic.concat (rooms.iPrivate) | filter:iQuery">
                                 <span style="color: rgba(51, 51, 51, 0.75); font-size: 18px;"><i ng-class="isPublic(room.public);"></i>&nbsp;{{ room.name }}</span></br>
                                 <span>By&nbsp;<small class="text-muted">{{ room.owner }}</small></span></br>
-                                <span style="color: rgba(51, 51, 51, 0.75); font-size: 18px;">{{ room.members.length }}&nbsp;Members</span>
+                                <span style="color: rgba(51, 51, 51, 0.75); font-size: 18px;">{{ room.members.length }}&nbsp;Member{{ pluralize (room.members.length) }}</span>
+
+                                <span class="overlay text-right">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-primary" ng-hide="isMember (room);" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="joinRoom (room);">&nbsp;<i class="glyphicon glyphicon-log-in"></i>&nbsp;</button>
+                                        <button type="button" class="btn btn-warning" ng-show="isMember (room);" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="leaveRoom (room);">&nbsp;<i class="glyphicon glyphicon-log-out"></i>&nbsp;</button>
+                                        <button type="button" class="btn btn-danger" ng-show="isCreator (room);" style="border-radius:0px 0px 0px 0px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="deleteRoom (room);">&nbsp;<i class="glyphicon glyphicon-trash"></i>&nbsp;</button>
+                                    </div>
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h4 class="col-md-offset-1 text-muted" style="margin-top:16px;" ng-show="(hashes | filter:iQuery).length">#Tag&nbsp;&nbsp;<span style="font-family:QuicksandL; font-size:28px;">{{ (hashes | filter:iQuery).length }}</span></h4>
+
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
+                        <ul class="list-group">
+                            <li class="list-group-item" style="border-radius: 0px;" ng-repeat="hash in hashes | filter:iQuery | orderBy:hash.mentions | orderBy:hash.hash">
+                                <a href="#/iMolly/{{ user }}" onclick="joinTheHash('{{ hash.hash }}');" class="text-info" style="text-decoration:none; font-size:16px;">#{{ hash.hash }}</a></br>
+                                <span>By&nbsp;<small class="text-muted">{{ hash.initiator }}</small></span></br>
+                                <span style="color: rgba(51, 51, 51, 0.75); font-size: 18px;">{{ hash.mentions }}&nbsp;Mention{{ pluralize (hash.mentions) }}</span>
                             </li>
                         </ul>
                     </div>

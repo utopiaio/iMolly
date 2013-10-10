@@ -188,8 +188,6 @@
                 // go ahead sue me!
                 $scope.user = $routeParams.user;
 
-
-
                 // for uno momento we'll be getting initiating data the old school way by calling init! --- cool name uh!
                 $http ({
                     method: "POST",
@@ -357,19 +355,27 @@
                                         console.log ("joined hash #%s", data.hash);
                                         pnotify ("joined <strong>#"+ data.hash +"</strong>", "info");
                                         pnotify ("adding latest 15 tweets under <strong>#"+ data.hash + "</strong>", "info");
-                                        var index = data.tweet.length - 1;
-                                        var iAdd = setInterval (function () {
-                                            // we're making sure the hashed tweet isn't already "in" and is following stuff and stuff...
-                                            // give me a break am dying right now ---- i have a cold!
-                                            if ($scope.following.indexOf (data.tweet[index].by) === -1 && $routeParams.user !== data.tweet[index].by) {
-                                                $scope.tweets.splice (0, 0, data.tweet[index]);
-                                            }
 
-                                            if (--index === -1) {
-                                                clearInterval (iAdd);
-                                                pnotify ("<strong>DON</strong> adding latest tweets under <strong>#"+ data.hash + "</strong>", "info");
-                                            }
-                                        }, 375);
+                                        if (data.tweet.length) {
+                                            var index = data.tweet.length - 1;
+
+                                            var iAdd = setInterval (function () {
+                                                // we're making sure the hashed tweet isn't already "in" and is following stuff and stuff...
+                                                // give me a break am dying right now ---- i have a cold!
+                                                if ($scope.following.indexOf (data.tweet[index].by) === -1 && $routeParams.user !== data.tweet[index].by) {
+                                                    $scope.tweets.splice (0, 0, data.tweet[index]);
+                                                }
+
+                                                if (--index === -1) {
+                                                    clearInterval (iAdd);
+                                                    pnotify ("<strong>DON</strong> adding latest tweets under <strong>#"+ data.hash + "</strong>", "info");
+                                                }
+                                            }, 375);
+                                        }
+
+                                        else {
+                                            pnotify ("<strong>DON</strong> adding latest tweets under <strong>#"+ data.hash + "</strong>", "info");
+                                        }
                                     break;
 
 
@@ -590,25 +596,58 @@
                     return isIt ? "glyphicon glyphicon-globe" : "glyphicon glyphicon-lock";
                 };
 
+                /// if the current user is the creator of a room - delete overlay will be shown
+                /// @param {Object} room
+                /// @return {String}
+                $scope.isCreator = function (room) {
+                    return room.owner === $routeParams.user ? true : false;
+                };
+
+                /// if the current user is members of a room - leave overlay will be shown
+                /// @param {Object} room
+                /// @return {Boolean}
+                $scope.isMember = function (room) {
+                    return room.members.indexOf($routeParams.user) === -1 ? false : true;
+                };
+
+                /// user has decided to leave the room --- BOOOOOOOOOOOOOOOOOOOO
+                $scope.leaveRoom = function (room) {
+                    console.log ("leaving room [%s]...", room.name);
+                };
+
                 /// delete's a room
                 /// @param {Object} room
                 $scope.deleteRoom = function (room) {
                     console.log ("deleting room by %s", room.owner);
                 };
 
-                /// if the current user is the creator of a room - delete overlay will be shown
-                /// @param {Object} room
-                /// @return {String}
-                $scope.isCreator = function (room) {
-                    return room.owner === $routeParams.user ? "" : "hide";
-                };
+                /// leave room
+                $scope.joinRoom = function (room) {
+                    console.log ("joining room [%s]...", room.name);
+                }
 
-                /// if the current user is members of a room - leave overlay will be shown
-                /// @param {Object} room
-                /// @return {String}
-                $scope.isMember = function (room) {
-                    return room.members.indexOf($routeParams.user) === -1 ? "hide" : "";
-                };
+                /// checks a user following status
+                $scope.isFollowing = function (iuser) {
+                    return $scope.following.indexOf (iuser.username) !== -1 ? true : false;
+                }
+
+                $scope.isSelf = function (iuser) {
+                    return $routeParams.user === iuser.username ? true : false;
+                }
+
+                /// Nuking user account
+                $scope.nukeAccount = function (iuser) {
+                    console.log ("Nuking account [%s]", iuser.username);
+                }
+
+                /// unfollow!
+                $scope.unfollow = function (iuser) {
+                    console.log ("Unfollowing [%s]...", iuser.username);
+                }
+
+                $scope.pluralize = function (iCount) {
+                    return (iCount > 1 || iCount === 0) ? "s" : "";
+                }
                 // Room: END ---------------------------------------------------------------------------------------------------------------------------------------------
 
 
