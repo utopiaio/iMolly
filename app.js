@@ -100,7 +100,7 @@ var server = http.createServer (app).listen (port, function () {
             });
 
             // am going to be defaulting on Socket.io --- no gzipping and stuff
-            iSocket.io().configure (socket.listen (server), pg_client);
+            iSocket.io().configure (socket.listen (server, {heartbeats: false, 'browser client gzip': true, 'match origin protocol': true, log: false}), pg_client);
         }
     });
 });
