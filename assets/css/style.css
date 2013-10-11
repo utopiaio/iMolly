@@ -1,0 +1,110 @@
+@font-face {
+    font-family:QuicksandL;
+    src: url(../font/Quicksand_Light.otf);
+}
+
+body {
+    background-color:rgba(192, 192, 192, 0.175);
+}
+
+.fresh {
+    background-color:rgba(70, 136, 71, 0.0875);
+}
+
+.alert {
+    border: 1px solid transparent;
+    border-radius: 0px 0px 0px 0px;
+    padding: 8px;
+}
+
+.list-group > button {
+    width:100%;
+    color:#757575;
+    transition: background-color 0.575s ease;
+}
+
+.list-group > li {
+    color:#565656;
+    transition: background-color 0.875s ease;
+}
+
+.list-group > button:hover, .list-group > li:hover {
+    background-color: rgba(224, 224, 224, 0.75);
+}
+
+.noDecor {
+    color:red;
+}
+
+/* Sidebar navigation */
+.bs-sidebar.affix {
+    position: static;
+}
+
+@media screen and (min-width: 992px) {
+    .bs-sidebar.affix, .bs-sidebar.affix-bottom {
+        width: 213px;
+    }
+
+    .bs-sidebar.affix {
+        position: fixed;
+        top: 66px;
+    }
+
+    .bs-sidebar.affix-bottom {
+        position: absolute;
+    }
+
+    .bs-sidebar.affix-bottom .bs-sidenav, .bs-sidebar.affix .bs-sidenav {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+}
+
+@media screen and (min-width: 1200px) {
+    .bs-sidebar.affix-bottom, .bs-sidebar.affix {
+        width: 263px;
+    }
+}
+
+/* overlay */
+/* this makes sure the tweet is OVER the overlay */
+.tweet p, .tweet a {
+    z-index: 4;
+    position: relative;
+}
+
+.tweet {
+    overflow: hidden;
+    position: relative;
+}
+
+.tweet.hidden {
+    display: none;
+}
+
+.tweet:before {
+    bottom: 0;
+    content: "";
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 2;
+}
+
+.tweet span.overlay {
+    background: none;
+    bottom: 0;
+    left: 0;
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: opacity 1.85s ease 0s;
+    z-index: 3;
+}
+
+.tweet:hover span.overlay, .tweet:hover .cnt {
+    opacity: 1;
+}

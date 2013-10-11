@@ -1,0 +1,71 @@
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+
+        <span class="navbar-brand" style="font-size:28px; margin-top:0px;">iMolly&nbsp;<span class="text-muted" style="font-size:12px;">Built by 4K for 4K</span></span>
+    </div>
+
+    <div class="collapse navbar-collapse navbar-ex1-collapse pull-right">
+        <form name="login_form" class="navbar-form form-inline" role="form" style="padding-top:3px;" novalidate ng-submit="login_form_submit()">
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="Username" ng-model="credentials.username" style="border-radius:0px;" equired />
+            </div>
+
+            <div class="form-group">
+                <input type="password" class="form-control" placeholder="Password" ng-model="credentials.password" style="border-radius:0px;" ng-minlength=6 required />
+            </div>
+
+            <button type="submit" class="btn btn-default" ng-disabled="login_form.$invalid" style="border-radius:0px;">Login</button>
+        </form>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 text-muted" style="margin-top:120px;">
+            <ul style="list-style:none; font-size:26px; font-family:QuicksandL; font-weight:normal;">
+                <li><i class="glyphicon glyphicon-flash"></i>&nbsp;Copes with Ethio Tele's super FAST connection</li>
+                <li><i class="glyphicon glyphicon-book"></i>&nbsp;Old School&nbsp;-&nbsp;TEXT ONLY</li>
+                <li><i class="glyphicon glyphicon-play-circle"></i>&nbsp;Username &amp Password - that's ALL!</li>
+                <li><i class="glyphicon glyphicon-lock"></i>&nbsp;HTTPS - though the NSA...</li>
+                <li><i class="glyphicon glyphicon-phone"></i>&nbsp;Mobile friendly - i think</li>
+            </ul>
+
+            <hr></hr>
+
+            <ul style="list-style:none; font-size:14px;">
+                <li><i class="glyphicon glyphicon-search"></i>&nbsp;&nbsp;Pick a familiar Username eg.&nbsp;<small><i>megan_fox</i></small></li>
+                <li><i class="glyphicon glyphicon-globe"></i>&nbsp;&nbsp;Use <a href="http://www.mozilla.org" target="_blank" style="text-decoration:none;">Mozilla Firefox</a> or <a href="http://www.chromium.org" target="_blank" style="text-decoration:none;">Google Chrome</a> (PROUDLY not tested on IE)</li>
+                <li><i class="glyphicon glyphicon-cloud"></i>&nbsp;&nbsp;Source hosted on <small><a href="https://github.com/moeduffdude/iMolly/" target="_blank" style="text-decoration:none;">GitHub</a></small></li>
+            </ul>
+        </div>
+
+        <div class="col-lg-4 well" style="margin-top:120px; background-color: rgba(51, 51, 51, 0.025);">
+            <span class="text-muted" style="font-family:QuicksandL; font-size:30px;">Don't have an account?</span></br>
+
+            <form name="signup_form" class="form-horizontal" role="form" style="margin-top: 8px;" novalidate ng-submit="signup_form_submit()">
+                <div class="form-group">
+                    <div class="col-lg-12">
+                        <input class="form-control input-lg" type="text" placeholder="Username" ng-model="new_.username" required />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-lg-12">
+                        <input type="password" class="form-control input-lg" placeholder="Password" ng-model="new_.password" ng-minlength=6 required />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-lg-6">
+                        <button type="submit" class="btn btn-block btn-lg btn-success" ng-disabled="signup_form.$invalid">Sign up</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

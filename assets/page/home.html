@@ -1,0 +1,244 @@
+<div class="container" style="margin-top:18px;">
+    <div class="row">
+        <!-- side navigation: START ------------------------------------------------------------------------------------------------------------------------------------->
+        <div class="col-md-3">
+            <div class="bs-sidebar hidden-print affix" role="complementary">
+                <div class="nav bs-sidenav list-group" style="font-size:16px;">
+                    <button class="text-left list-group-item active" activate="iTweet">
+                        <i class="glyphicon glyphicon-bullhorn"></i>&nbsp;&nbsp;iTweet
+                        <span class="badge" ng-bind="followers.length"></span>
+                        <span class="badge" ng-bind="following.length"></span>
+                    </button>
+
+                    <button class="text-left list-group-item" activate="iMessage">
+                        <i class="glyphicon glyphicon-inbox"></i>&nbsp;&nbsp;iMessage
+                        <span class="badge" ng-bind="message.iInboxNotRead"></span>
+                    </button>
+
+                    <button class="text-left list-group-item" activate="iRoom">
+                        <i class="glyphicon glyphicon-comment"></i>&nbsp;&nbsp;iRoom
+                        <span class="badge" ng-bind="(rooms.iPublic).length"></span>
+                        <span class="badge" ng-bind="(rooms.iPrivate).length"></span>
+                    </button>
+
+                    <button class="text-left list-group-item" activate="iRequest">
+                        <i class="glyphicon glyphicon-star-empty"></i>&nbsp;&nbsp;iRequest
+                        <span class="badge" ng-bind="requests.length"></span>
+                    </button>
+
+                    <button class="text-left list-group-item" activate="iFinder">
+                        <i class="glyphicon glyphicon-search"></i>&nbsp;&nbsp;iFinder
+                        <span class="badge" ng-bind="hashes.length"></span>
+                        <span class="badge" ng-bind="online.length"></span>
+                        <span class="badge" ng-bind="users.length"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- side navigation: END ------------------------------------------------------------------------------------------------------------------------------------ -->
+
+
+
+        <div class="col-md-6 text-center" style="border-left:1px solid rgba(64, 64, 64, 0.085); border-right:1px solid rgba(64, 64, 64, 0.085);" role="main">
+
+
+
+            <!-- iTweet: START --------------------------------------------------------------------------------------------------------------------------------------- -->
+            <div id="iTweet" class="iMolly">
+                <div class="row" style="padding:4px 0px 18px 0px;">
+                    <form name="tweet_form" role="form" novalidate ng-submit="tweet_submit()">
+                        <div class="col-md-9">
+                            <textarea class="form-control" rows=3 style="resize:none; margin-bottom:12px; border-radius:0px;" placeholder="እቴም ሜቴ የሎሚ ሽታ ያ ሰውዬ ምን አለሽ ማታ?" ng-model="tweet" minlength="1" maxlength="141" required></textarea>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <button ng-disabled="tweet_form.$invalid" class="btn btn-info btn-block" style="border-radius:0px;">iTweet</button>
+                                </div>
+                            </div>
+
+                            <div class="row" style="padding-top:6px;">
+                                <div class="col-md-12">
+                                    <span style="font-size:34px; font-family:QuicksandL;" ng-bind="141 - tweet.length"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 text-left">
+                        <ul class="list-group" id="tweets">
+                            <li class="list-group-item tweet" ng-repeat="tweet in tweets" id="{{ tweet.id }}" style="border-radius: 0px;">
+                                <h4 class="list-group-item-heading text-primary">{{ tweet.by }} <small class="text-muted">@ {{ age(tweet.age) }}</small></h4>
+                                <p class="list-group-item-text" ng-bind-html-unsafe="tweet | hash:$index"></p>
+
+                                <span class="overlay text-right" ng-class="isOwner({{tweet.owner}});">
+                                    <button class="btn btn-sm btn-danger" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="deleteTweet(tweet);">&nbsp;<i class="glyphicon glyphicon-trash"></i>&nbsp;</button>
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- iTweet: END ----------------------------------------------------------------------------------------------------------------------------------------- -->
+
+
+
+            <!-- iMessage: START ------------------------------------------------------------------------------------------------------------------------------------- -->
+            <div id="iMessage" class="iMolly hide">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
+                        <input type="text" placeholder="Search" class="form-control input-lg" ng-model="query" style="border-radius:0px;" />
+                    </div>
+                </div>
+
+                <div class="row" style="padding:18px 0px 18px 0px;">
+                    <ul class="nav nav-tabs nav-justified" style="font-size:16px;">
+                        <li class="active"><a class="text-muted" data-toggle="tab" href="#inbox"><i class="glyphicon glyphicon-cloud-download"></i>&nbsp;&nbsp;Inbox&nbsp;&nbsp;&nbsp;<span class="badge">{{ message.iInboxNotRead }}</span></a></li>
+                        <li class=""><a class="text-muted" data-toggle="tab" href="#sent"><i class="glyphicon glyphicon-cloud-upload"></i>&nbsp;&nbsp;Sent&nbsp;&nbsp;&nbsp;<span class="badge">{{ message.iSentNotRead }}</span></a></li>
+                        <li class=""><a class="text-muted" data-toggle="tab" href="#compose"><i class="glyphicon glyphicon-pencil"></i>&nbsp;&nbsp;Compose</a></li>
+                    </ul>
+
+                    <div class="tab-content text-left" style="padding: 12px 8px 12px 8px;">
+                        <div id="inbox" class="tab-pane fade in active">
+                            <ul class="list-group">
+                                <li class="list-group-item tweet" ng-repeat="inbox in message.iInbox | filter:query" ng-class="isFresh({{inbox.fresh == true}});" id="{{ inbox.id }}" style="border-radius: 0px;">
+                                    <h4 class="list-group-item-heading">{{ inbox.from }} @ <small>{{ inbox.timestamp|date:"MMMM dd, y @ hh:mm:ss" }}</small></h4>
+                                    <p class="list-group-item-text">{{ inbox.message }}</p>
+
+                                    <span class="overlay text-right">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-primary" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="replyTo(inbox);"><i class="glyphicon glyphicon-repeat"></i></button>
+                                            <button type="button" class="btn btn-sm btn-danger" style="border-radius:0px 0px 0px 0px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="deleteMessage(inbox);">&nbsp;<i class="glyphicon glyphicon-trash"></i>&nbsp;</button>
+                                        </div>
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div id="sent" class="tab-pane fade in">
+                            <ul class="list-group">
+                                <li class="list-group-item tweet" ng-repeat="sent in message.iSent | filter:query" ng-class="isFresh({{sent.fresh == true}});" id="{{ sent.id }}" style="border-radius: 0px;">
+                                    <h4 class="list-group-item-heading">{{ sent.to }} @ <small>{{ sent.timestamp|date:"MMMM dd, y @ hh:mm:ss" }}</small></h4>
+                                    <p class="list-group-item-text">{{ sent.message }}</p>
+
+                                    <span class="overlay text-right">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-danger" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="deleteMessage(sent);">&nbsp;<i class="glyphicon glyphicon-trash"></i>&nbsp;</button>
+                                        </div>
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div id="compose" class="tab-pane fade in">
+                            Coming Soon
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- iMessage: END --------------------------------------------------------------------------------------------------------------------------------------- -->
+
+
+
+            <!-- iRoom: START ---------------------------------------------------------------------------------------------------------------------------------------- -->
+            <div id="iRoom" class="iMolly hide">
+                Coming Soon
+            </div>
+            <!-- iRoom: START ---------------------------------------------------------------------------------------------------------------------------------------- -->
+
+
+            <!-- iRequest: START ------------------------------------------------------------------------------------------------------------------------------------- -->
+            <div id="iRequest" class="iMolly hide text-left">
+                <div ng-show="requests.length == 0">
+                    <h3 class="text-muted" style="margin-bottom:0px;">Dude, you have no iRequests!</h3>
+                    <small class="text-muted">FYI this means you're BORING or FAT or even worse - BOTH!</small>
+                </div>
+
+                <ul class="list-group">
+                    <li class="list-group-item tweet" style="border-radius: 0px;" ng-repeat="request in requests">
+                        <span>{{ request.type }}</span></br>
+                        <small class="text-muted">{{ request.timestamp|date:"MMMM dd, y @ hh:mm:ss" }}</small></br>
+                        <a style="font-size:18px; text-decoration:none;" href="#/iMolly/{{ user }}" onclick="followUser('{{request.from}}');">@{{ request.from }}</a>
+
+                        <span class="overlay">
+                            <div class="btn-group" style="position:absolute; top:0px; right:0px;">
+                                <button type="button" class="btn btn-primary" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="acceptRequest(request, $index);"><i class="glyphicon glyphicon-thumbs-up"></i></button>
+                                <button type="button" class="btn btn-danger" style="border-radius:0px 0px 0px 0px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="declineRequest(request, $index);">&nbsp;<i class="glyphicon glyphicon-thumbs-down"></i>&nbsp;</button>
+                            </div>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+            <!-- iRequest: START ------------------------------------------------------------------------------------------------------------------------------------- -->
+
+
+            <!-- iFinder: START -------------------------------------------------------------------------------------------------------------------------------------- -->
+            <div id="iFinder" class="iMolly hide text-left">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
+                        <input type="text" placeholder="Search" class="form-control input-lg" ng-model="iQuery" style="border-radius:0px;" />
+                    </div>
+                </div>
+
+                <h4 class="col-md-offset-1 text-muted" style="margin-top:16px;" ng-show="(users | filter:iQuery).length">@User&nbsp;&nbsp;<span style="font-family:QuicksandL; font-size:28px;">{{ (users | filter:iQuery).length }}</span></h4>
+
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
+                        <ul class="list-group">
+                            <li class="list-group-item tweet" style="border-radius: 0px;" ng-repeat="iuser in users | filter:iQuery">
+                                <a style="font-size:18px; text-decoration:none;" href="#/iMolly/{{ user }}" onclick="followUser('{{iuser.username}}');">@{{ iuser.username }}</a>
+
+                                <span class="overlay text-right">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-primary" ng-show="isFollowing (iuser);"style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="unfollow (iuser);">&nbsp;<i class="glyphicon glyphicon-new-window"></i>&nbsp;</button>
+                                        <button type="button" class="btn btn-danger" ng-show="isSelf (iuser);" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="nukeAccount (iuser);">&nbsp;<i class="glyphicon glyphicon-trash"></i>&nbsp;</button>
+                                    </div>
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h4 class="col-md-offset-1 text-muted" style="margin-top:16px;" ng-show="(rooms.iPublic.concat (rooms.iPrivate) | filter:iQuery).length">Room&nbsp;&nbsp;<span style="font-family:QuicksandL; font-size:28px;">{{ (rooms.iPublic.concat (rooms.iPrivate) | filter:iQuery).length }}</span></h4>
+
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
+                        <ul class="list-group">
+                            <li class="list-group-item tweet" style="border-radius: 0px;" ng-repeat="room in rooms.iPublic.concat (rooms.iPrivate) | filter:iQuery">
+                                <span style="color: rgba(51, 51, 51, 0.75); font-size: 18px;"><i ng-class="isPublic(room.public);"></i>&nbsp;{{ room.name }}</span></br>
+                                <span>By&nbsp;<small class="text-muted">{{ room.owner }}</small></span></br>
+                                <span style="color: rgba(51, 51, 51, 0.75); font-size: 18px;">{{ room.members.length }}&nbsp;Member{{ pluralize (room.members.length) }}</span>
+
+                                <span class="overlay text-right">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-primary" ng-hide="isMember (room);" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="joinRoom (room);">&nbsp;<i class="glyphicon glyphicon-log-in"></i>&nbsp;</button>
+                                        <button type="button" class="btn btn-warning" ng-show="isMember (room);" style="border-radius:0px 0px 0px 4px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="leaveRoom (room);">&nbsp;<i class="glyphicon glyphicon-log-out"></i>&nbsp;</button>
+                                        <button type="button" class="btn btn-danger" ng-show="isCreator (room);" style="border-radius:0px 0px 0px 0px; opacity:0.675; padding:4px 18px 4px 18px;" ng-click="deleteRoom (room);">&nbsp;<i class="glyphicon glyphicon-trash"></i>&nbsp;</button>
+                                    </div>
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h4 class="col-md-offset-1 text-muted" style="margin-top:16px;" ng-show="(hashes | filter:iQuery).length">#Tag&nbsp;&nbsp;<span style="font-family:QuicksandL; font-size:28px;">{{ (hashes | filter:iQuery).length }}</span></h4>
+
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
+                        <ul class="list-group">
+                            <li class="list-group-item" style="border-radius: 0px;" ng-repeat="hash in hashes | filter:iQuery | orderBy:hash.mentions | orderBy:hash.hash">
+                                <a href="#/iMolly/{{ user }}" onclick="joinTheHash('{{ hash.hash }}');" class="text-info" style="text-decoration:none; font-size:16px;">#{{ hash.hash }}</a></br>
+                                <span>By&nbsp;<small class="text-muted">{{ hash.initiator }}</small></span></br>
+                                <span style="color: rgba(51, 51, 51, 0.75); font-size: 18px;">{{ hash.mentions }}&nbsp;Mention{{ pluralize (hash.mentions) }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- iFinder: END ---------------------------------------------------------------------------------------------------------------------------------------- -->
+        </div>
+    </div>
+</div>
