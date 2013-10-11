@@ -458,6 +458,7 @@
 
                                     // we are in the mist of "conversation"
                                     case "MENTION_PLUS": //-------------------------------------------------------------------------------------------------------------------------
+                                        console.log ("am suppose to be updating a hash count...");
                                         $scope.hashes.forEach (function (hash, index) {
                                             if (data.hash.hash === hash.hash) {
                                                 $scope.hashes[index] = data.hash;
@@ -483,12 +484,14 @@
                                     case "HASH_TWEET": //---------------------------------------------------------------------------------------------------------------------------
                                         if ($routeParams.user !== data.tweet.by) {
                                             // the user isn't following anyone
-                                            if ($scope.following === null)
+                                            if ($scope.following === null) {
                                                 $scope.tweets.splice (0, 0, data.tweet);
+                                            }
 
                                             // user is following some ppl, making sure the #ed tweet-er isn't followed, if true we're adding the tweet
-                                            else if ($scope.following.indexOf (data.tweet.by) === -1)
+                                            else if ($scope.following.indexOf (data.tweet.by) === -1) {
                                                 $scope.tweets.splice (0, 0, data.tweet);
+                                            }
                                         }
                                     break;
 
