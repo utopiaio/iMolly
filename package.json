@@ -9,8 +9,14 @@
     "connect": "2.8.5",
     "socket.io": "0.9.16",
     "pg": "2.5.0",
-    "redis-url": "0.2.0",
-    "connect-redis": "*"
+    "buffer-crc32": "0.2.1",
+    "cookie": "0.1.0",
+    "cookie-signature": "1.0.1",
+    "debug": "0.7.2",
+    "fresh": "0.2.0",
+    "methods": "0.0.1",
+    "range-parser": "0.0.4",
+    "send": "0.1.4"
   },
 
   "engines": {
