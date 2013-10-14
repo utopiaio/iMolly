@@ -83,14 +83,12 @@
             /// this is where to globals come in to play
             function joinTheHash (hash) {
                 console.log ("sending JOIN_HASH request for [#%s]...", hash);
-                pnotify ("joining hash...", "info");
                 socket.emit ("message", {mode: "JOIN_HASH", hash: hash});
             }
 
             /// when a '@tag' is clicked if sends a request to the user
             function followUser (user) {
                 console.log ("sending follow request for [@%s]...", user);
-                pnotify ("sending FOLLOW request...", "info");
                 socket.emit ("message", {mode: "SEND_FOLLOW_REQUEST", to: user});
             }
 
@@ -114,7 +112,6 @@
                     if ($scope.credentials.username.length > 0 && $scope.credentials.password.length > 5) {
                         console.log ("no tweaking detected");
                         console.log ("sending credentials...");
-                        pnotify ("Sending request...", "info");
 
                         $http ({
                             method: "POST",
@@ -147,7 +144,6 @@
                     if ($scope.new_.username.length > 0 && $scope.new_.password.length > 5) {
                         console.log ("no tweaking detected");
                         console.log ("sending new user request...");
-                        pnotify ("sending request...", "info");
 
                         $http ({
                             method: "POST",
@@ -471,7 +467,7 @@
                                     // we are in the presence of a new hash --- rise-up, rise-up
                                     // am really good with naming modes aren't i...
                                     case "NEW_HASH": //-----------------------------------------------------------------------------------------------------------------------------
-                                        $scope.hashes.splice (0, 0, data.hash);
+                                        $scope.hashes.splice ($scope.hashes.length, 0, data.hash);
                                         // i don't know about you but i would like to know new hash's out there...
                                         $routeParams.user !== data.hash.initiator ? pnotify ("<strong>#"+ data.hash.hash +"</strong> started by <strong>"+ data.hash.initiator +"</strong>", "info") : pnotify ("<strong>#"+ data.hash.hash +"</strong> started", "info");
                                     break;
@@ -483,13 +479,8 @@
                                     // otherwise we'll have a double tweet in our hands!
                                     case "HASH_TWEET": //---------------------------------------------------------------------------------------------------------------------------
                                         if ($routeParams.user !== data.tweet.by) {
-                                            // the user isn't following anyone
-                                            if ($scope.following === null) {
-                                                $scope.tweets.splice (0, 0, data.tweet);
-                                            }
-
                                             // user is following some ppl, making sure the #ed tweet-er isn't followed, if true we're adding the tweet
-                                            else if ($scope.following.indexOf (data.tweet.by) === -1) {
+                                            if ($scope.following.indexOf (data.tweet.by) === -1) {
                                                 $scope.tweets.splice (0, 0, data.tweet);
                                             }
                                         }
@@ -532,8 +523,6 @@
                     if ($scope.tweet.length > 0 && $scope.tweet.length < 142) {
                         console.log ("no tweaking detected");
                         console.log ("sending tweet...");
-                        // am going to be pnotify-ing ERYthing --- i got beaten by the super fast connection so --- this is my spinner
-                        pnotify ("tweeting...", "info");
                         socket.emit ("message", {tweet: $scope.tweet, mode: "TWEET"});
                         $scope.tweet = "";
                         console.log ("DON");
@@ -571,7 +560,6 @@
                 /// @param {Object} tweet
                 $scope.deleteTweet = function (tweet) {
                     console.log ("Deleting tweet %d...", tweet.id);
-                    pnotify ("deleting tweet...", "info");
                     socket.emit ("message", {tweet: tweet, mode: "DELETE_TWEET"});
                 };
                 // Twitter: END ------------------------------------------------------------------------------------------------------------------------------------------
@@ -669,14 +657,12 @@
                 /// well this accepts iRequest --- amazing is it not
                 $scope.acceptRequest = function (request, index) {
                     console.log ("Accepting Request from [%s]...", request.from);
-                    pnotify ("accepting request...", "info");
                     socket.emit ("message", {request: request, index: index, mode: "ACCEPT_REQUEST"});
                 }
 
                 /// and this declines it --- oh, no you didin' --- neck roll
                 $scope.declineRequest = function (request, index) {
                     console.log ("Declining Request from [%s]...", request.from);
-                    pnotify ("declining request...", "info");
                     socket.emit ("message", {request: request, index: index, mode: "DECLINE_REQUEST"});
                 }
                 // Request: END ------------------------------------------------------------------------------------------------------------------------------------------
