@@ -33,7 +33,7 @@ var iSocket = require (path.join (__dirname, "/lib/iSocket"));
 
 var port = process.env.PORT || 8888;
 // the connection string for Heroku is given via the process env argument
-var pg_connection = process.env.DATABASE_URL || "tcp://qxdatuacnjsnsv:K83GSvsHuu5Hl2GRk9A6Z-CBUK@ec2-54-247-168-15.eu-west-1.compute.amazonaws.com:5432/d1mkbv668d0gom";
+var pg_connection = process.env.DATABASE_URL || "tcp://postgres:postgres@127.0.0.1:5432/imolly";
 var pg_client = new pg.Client (pg_connection);
 // session, set to 3 days
 var sessionStore = iSocket.getSessionStore ();
