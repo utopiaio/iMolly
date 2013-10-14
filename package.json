@@ -16,7 +16,8 @@
     "fresh": "0.2.0",
     "methods": "0.0.1",
     "range-parser": "0.0.4",
-    "send": "0.1.4"
+    "send": "0.1.4",
+    "connect-redis": "*"
   },
 
   "engines": {

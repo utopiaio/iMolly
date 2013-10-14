@@ -458,10 +458,9 @@
 
                                     // we are in the mist of "conversation"
                                     case "MENTION_PLUS": //-------------------------------------------------------------------------------------------------------------------------
-                                        console.log ("am suppose to be updating a hash count...");
                                         $scope.hashes.forEach (function (hash, index) {
                                             if (data.hash.hash === hash.hash) {
-                                                console.log ("updated mention count @ index [$d]", index);
+                                                console.log ("updated mention count @ index [%d]...", index);
                                                 $scope.hashes[index].mentions = data.hash.mentions;
                                             }
                                         });
