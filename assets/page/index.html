@@ -83,12 +83,14 @@
             /// this is where to globals come in to play
             function joinTheHash (hash) {
                 console.log ("sending JOIN_HASH request for [#%s]...", hash);
+                pnotify ("joining hash...", "info");
                 socket.emit ("message", {mode: "JOIN_HASH", hash: hash});
             }
 
             /// when a '@tag' is clicked if sends a request to the user
             function followUser (user) {
                 console.log ("sending follow request for [@%s]...", user);
+                pnotify ("sending FOLLOW request...", "info");
                 socket.emit ("message", {mode: "SEND_FOLLOW_REQUEST", to: user});
             }
 
@@ -112,6 +114,7 @@
                     if ($scope.credentials.username.length > 0 && $scope.credentials.password.length > 5) {
                         console.log ("no tweaking detected");
                         console.log ("sending credentials...");
+                        pnotify ("Sending request...", "info");
 
                         $http ({
                             method: "POST",
@@ -144,6 +147,7 @@
                     if ($scope.new_.username.length > 0 && $scope.new_.password.length > 5) {
                         console.log ("no tweaking detected");
                         console.log ("sending new user request...");
+                        pnotify ("sending request...", "info");
 
                         $http ({
                             method: "POST",
@@ -254,7 +258,8 @@
                         $scope.users = data.users;
                         $scope.online = data.online;
 
-                        /// "cron" job that updates the timestamp of the tweets so they are updated LIVE -----------------------------------------------------------------
+                        /// "cron" job that updates the timestamp of the tweets so they are updated LIVE ---------------------------------------------------------------------------
+                        /// i think this will mess up stuff if 'backed' and stuff...
                         setInterval ( function () {
                             for (var i = 0; i < $scope.tweets.length; i++) {
                                 var tweet = $scope.tweets[i];
@@ -316,20 +321,20 @@
                         }, 1000);
 
 
-                        // socket.io -------------------------------------------------------------------------------------------------------------------------------------
+                        // socket.io -----------------------------------------------------------------------------------------------------------------------------------------------
                         // NOTE: try to initiate socket connection outside the 'privileged' scope and you'll get a 403
                         socket = io.connect();
 
-                        // personal messages are sent via an emit of 'username' +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+                        // personal messages are sent via an emit of 'username' +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
                         // this will be sent via socket.id so don't try anything son!
                         socket.on ($routeParams.user, function (data) {
                             if (data.success) {
                                 switch (data.mode) {
                                     // delete request has been confirmed
-                                    case "DELETE_TWEET": //---------------------------------------------------------------------------------------------------------------
+                                    case "DELETE_TWEET": //-------------------------------------------------------------------------------------------------------------------------
                                         console.log ("removing tweet with id [%s]...", data.tweet.id);
                                         $("#"+ data.tweet.id).hide("fade", 185, function () {
-                                            pnotify ("Tweet deleted successfully", "success");
+                                            pnotify ("tweet deleted successfully", "success");
                                             // completely nuking the tweet from DOM
                                             $("#"+ data.tweet.id).remove();
                                             console.log ("DON removing tweet");
@@ -339,7 +344,7 @@
 
 
                                     // tweet has been successfully tweeted!
-                                    case "TWEET": //----------------------------------------------------------------------------------------------------------------------
+                                    case "TWEET": //--------------------------------------------------------------------------------------------------------------------------------
                                         $scope.tweets.splice (0, 0, data.tweet);
                                         pnotify ("tweet tweeted", "info");
                                     break;
@@ -347,7 +352,7 @@
 
 
                                     // you've now joined the conversation, via click i.e.
-                                    case "JOIN_HASH": //------------------------------------------------------------------------------------------------------------------
+                                    case "JOIN_HASH": //----------------------------------------------------------------------------------------------------------------------------
                                         // if we just added the tweets, it'll not be "noticalbel", to do so, we'll use interval
                                         // a lot of reaserach went in to the interval --- i.e. 375 --- NAAAT! [Borat]
 
@@ -381,27 +386,29 @@
 
 
                                     // step aside ppl, this user has a request
-                                    case "FOLLOW_REQUEST": //-------------------------------------------------------------------------------------------------------------
+                                    case "FOLLOW_REQUEST": //-----------------------------------------------------------------------------------------------------------------------
                                         $scope.requests.splice (0, 0, data.request);
                                         pnotify ("<strong>"+ data.request.type +"</strong> request from <strong><i>"+  data.request.from +"</i></strong>", "info");
                                     break;
 
 
 
-                                    case "SEND_FOLLOW_REQUEST": //--------------------------------------------------------------------------------------------------------
+                                    case "SEND_FOLLOW_REQUEST": //------------------------------------------------------------------------------------------------------------------
                                         pnotify ("request sent to <strong>"+ data.request.to +"</strong>", "success");
                                     break;
 
 
-                                    case "ACCEPT_REQUEST":
+
+                                    case "ACCEPT_REQUEST": //-----------------------------------------------------------------------------------------------------------------------
                                         $scope.followers.push (data.from);
                                         $scope.requests.splice (data.index, 1);
                                         pnotify ("User <strong>"+ data.from +"</strong> is now following you", "info");
                                     break;
 
 
+
                                     // you're lucky enough to see your request being accepted
-                                    case "REQUEST_ACCEPTED":
+                                    case "REQUEST_ACCEPTED": //---------------------------------------------------------------------------------------------------------------------
                                         $scope.following = data.following;
                                         pnotify ("User <strong>"+ data.acceptor +"</strong> has accepted you", "info");
                                     break;
@@ -419,12 +426,12 @@
 
 
 
-                        // "iMolly" concerning messages are sent via a broadcast +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                        // "iMolly" concerning messages are sent via a broadcast +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
                         socket.on ("message", function (data) {
                             if (data.success) {
                                 switch (data.mode) {
                                     // a tweet has been deleted!
-                                    case "DELETE_TWEET": //---------------------------------------------------------------------------------------------------------------
+                                    case "DELETE_TWEET": //-------------------------------------------------------------------------------------------------------------------------
                                         console.log ("removing tweet with id [%s]", data.tweet.id);
                                         // here, the deleting will be done quietly --- i.e. there won't be any pnotify
                                         $("#"+ data.tweet.id).hide("fade", 185);
@@ -433,14 +440,14 @@
 
 
                                     // someone in the 'loop' has tweeted --- PUSH-IT! on TOP i.e.
-                                    case "TWEET": //----------------------------------------------------------------------------------------------------------------------
+                                    case "TWEET": //--------------------------------------------------------------------------------------------------------------------------------
                                         $scope.tweets.splice (0, 0, data.tweet);
                                     break;
 
 
 
                                     // hurray! --- online
-                                    case "ONLINE_PLUS": //-----------------------------------------------------------------------------------------------------------------
+                                    case "ONLINE_PLUS": //--------------------------------------------------------------------------------------------------------------------------
                                         if ($scope.online.indexOf (data.user) === -1 && $routeParams.user !== data.user) {
                                             pnotify ("user <strong>"+ data.user +"</strong> is now online", "info");
                                             $scope.online.push (data.user);
@@ -450,10 +457,11 @@
 
 
                                     // we are in the mist of "conversation"
-                                    case "MENTION_PLUS": //---------------------------------------------------------------------------------------------------------------
+                                    case "MENTION_PLUS": //-------------------------------------------------------------------------------------------------------------------------
                                         $scope.hashes.forEach (function (hash, index) {
                                             if (data.hash.hash === hash.hash) {
-                                                $scope.hashes[index] = data.hash;
+                                                console.log ("updated mention count @ index [%d]...", index);
+                                                $scope.hashes[index].mentions = data.hash.mentions;
                                             }
                                         });
                                     break;
@@ -462,7 +470,7 @@
 
                                     // we are in the presence of a new hash --- rise-up, rise-up
                                     // am really good with naming modes aren't i...
-                                    case "NEW_HASH": //-------------------------------------------------------------------------------------------------------------------
+                                    case "NEW_HASH": //-----------------------------------------------------------------------------------------------------------------------------
                                         $scope.hashes.splice (0, 0, data.hash);
                                         // i don't know about you but i would like to know new hash's out there...
                                         $routeParams.user !== data.hash.initiator ? pnotify ("<strong>#"+ data.hash.hash +"</strong> started by <strong>"+ data.hash.initiator +"</strong>", "info") : pnotify ("<strong>#"+ data.hash.hash +"</strong> started", "info");
@@ -473,15 +481,17 @@
                                     // tweet with a hash
                                     // here'it'll be a little different, we should make sure the user isn't already 'following' the user
                                     // otherwise we'll have a double tweet in our hands!
-                                    case "HASH_TWEET": //-----------------------------------------------------------------------------------------------------------------
+                                    case "HASH_TWEET": //---------------------------------------------------------------------------------------------------------------------------
                                         if ($routeParams.user !== data.tweet.by) {
                                             // the user isn't following anyone
-                                            if ($scope.following === null)
+                                            if ($scope.following === null) {
                                                 $scope.tweets.splice (0, 0, data.tweet);
+                                            }
 
                                             // user is following some ppl, making sure the #ed tweet-er isn't followed, if true we're adding the tweet
-                                            else if ($scope.following.indexOf (data.tweet.by) === -1)
+                                            else if ($scope.following.indexOf (data.tweet.by) === -1) {
                                                 $scope.tweets.splice (0, 0, data.tweet);
+                                            }
                                         }
                                     break;
 
@@ -490,7 +500,7 @@
                                     // BOOOOOOOOOOOOOOOOOO!
                                     // user 'logged' out
                                     // NOTE: this is will be triggered when a page is refreshed, so think long and HARD [Black Guy] before hitting F5
-                                    case "DISCONNECT": //-----------------------------------------------------------------------------------------------------------------
+                                    case "DISCONNECT": //---------------------------------------------------------------------------------------------------------------------------
                                         $scope.online.splice ($scope.online.indexOf (data.user), 1);
                                         pnotify ("<strong>"+ data.user +"</strong> is now offline", "info");
                                     break;
@@ -500,6 +510,7 @@
                                 $rootScope.$apply();
                             }
 
+                            // success: false
                             else {
                                 console.log (data);
                             }
@@ -521,8 +532,9 @@
                     if ($scope.tweet.length > 0 && $scope.tweet.length < 142) {
                         console.log ("no tweaking detected");
                         console.log ("sending tweet...");
+                        // am going to be pnotify-ing ERYthing --- i got beaten by the super fast connection so --- this is my spinner
+                        pnotify ("tweeting...", "info");
                         socket.emit ("message", {tweet: $scope.tweet, mode: "TWEET"});
-                        console.log ("resetting `tweet_form` form...");
                         $scope.tweet = "";
                         console.log ("DON");
                     }
@@ -559,6 +571,7 @@
                 /// @param {Object} tweet
                 $scope.deleteTweet = function (tweet) {
                     console.log ("Deleting tweet %d...", tweet.id);
+                    pnotify ("deleting tweet...", "info");
                     socket.emit ("message", {tweet: tweet, mode: "DELETE_TWEET"});
                 };
                 // Twitter: END ------------------------------------------------------------------------------------------------------------------------------------------
@@ -569,7 +582,7 @@
                 /// delete's a message
                 /// @param {Object} message
                 $scope.deleteMessage = function (message) {
-                    console.log ("Deleting message %d", message.id);
+                    console.log ("deleting message %d", message.id);
                 };
 
                 /// initiates a modal accordingly reply
@@ -656,12 +669,14 @@
                 /// well this accepts iRequest --- amazing is it not
                 $scope.acceptRequest = function (request, index) {
                     console.log ("Accepting Request from [%s]...", request.from);
+                    pnotify ("accepting request...", "info");
                     socket.emit ("message", {request: request, index: index, mode: "ACCEPT_REQUEST"});
                 }
 
                 /// and this declines it --- oh, no you didin' --- neck roll
                 $scope.declineRequest = function (request, index) {
                     console.log ("Declining Request from [%s]...", request.from);
+                    pnotify ("declining request...", "info");
                     socket.emit ("message", {request: request, index: index, mode: "DECLINE_REQUEST"});
                 }
                 // Request: END ------------------------------------------------------------------------------------------------------------------------------------------

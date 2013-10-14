@@ -17,7 +17,7 @@
  *
  */
 
-var https = require ("https");
+var http = require ("http");
 var path = require ("path");
 var fs = require ("fs");
 
@@ -35,24 +35,20 @@ var port = process.env.PORT || 8888;
 // the connection string for Heroku is given via the process env argument
 var pg_connection = process.env.DATABASE_URL || "tcp://postgres:postgres@127.0.0.1:5432/imolly";
 var pg_client = new pg.Client (pg_connection);
-// this options will be used for HTTPS --- yep, we're only allowing the NSA access without authorization!
-var options = {
-    key:    fs.readFileSync (path.join (__dirname, "/lib/https/private.pem")),
-    cert:   fs.readFileSync (path.join (__dirname, "/lib/https/public.pem"))
-};
 // session, set to 3 days
 var sessionStore = iSocket.getSessionStore ();
 var session = {
     key:    'iMolly',
     cookie: {
         maxAge:     259200000,
-        secure:     true
+        secure:     false
     },
     store: sessionStore
 };
 
 // cached resources will be stored here
 var cache = {};
+var iJSON = {};
 
 /// adding a couple more of MIME's on the compression list of connect...
 /// @param {Object} request
@@ -85,8 +81,8 @@ app.use ("/signup", signup);
 app.use ("/init", init);
 app.use (home);
 
-var server = https.createServer (options, app).listen (port, function () {
-    console.log("Server listening @ %d", port);
+var server = http.createServer (app).listen (port, function () {
+    console.log ("Server listening @ %d", port);
 
     pg_client.connect (function (error) {
         // if there's an error connecting to the database server we'll be killing the whole thing!
@@ -103,7 +99,8 @@ var server = https.createServer (options, app).listen (port, function () {
                 }
             });
 
-            iSocket.io().configure (socket.listen (server, {'browser client gzip': true, 'match origin protocol': true}), pg_client);
+            // am going to be defaulting on Socket.io --- no gzipping and stuff
+            iSocket.io().configure (socket.listen (server), pg_client);
         }
     });
 });
@@ -137,7 +134,6 @@ function home (request, response) {
 
 /// in Rex-Kown-Do we use the buddy system, no more flying solo, you need somebody watching your back at all times! --- and the class was about "self-defense"
 function init (request, response) {
-    ///*
     sessionStore.get (request.sessionID, function (error, session) {
         if (!error) {
             if (crypto.logged_in (session) ) {
@@ -163,7 +159,7 @@ function init (request, response) {
                 /// @param {Object} items
                 /// @param {String} FLAG
                 function iSerialFunc (items, FLAG) {
-                    // tweets ----------------------------------------------------------------------------------------------------------------------------------------------------
+                    // tweets ------------------------------------------------------------------------------------------------------------------------------------------------------
                     if (FLAG === "DON_TWT") {
                         items.forEach (function (tweet) {
                             tweet.by === session.user.username ? tweet.owner = true : tweet.owner = false;
@@ -172,17 +168,17 @@ function init (request, response) {
                         initJSON.tweet.tweets = items;
                     }
 
-                    // messages --------------------------------------------------------------------------------------------------------------------------------------------------
+                    // messages ----------------------------------------------------------------------------------------------------------------------------------------------------
                     else if (FLAG === "DON_M") {
                         initJSON.messages = items;
                     }
 
-                    // all users -------------------------------------------------------------------------------------------------------------------------------------------------
+                    // all users ---------------------------------------------------------------------------------------------------------------------------------------------------
                     else if (FLAG === "DON_USR") {
                         initJSON.users = items;
                     }
 
-                    // following users -------------------------------------------------------------------------------------------------------------------------------------------
+                    // following users ---------------------------------------------------------------------------------------------------------------------------------------------
                     else if (FLAG === "DON_F") {
                         items.forEach (function (follower) {
                             initJSON.tweet.followers.push (follower.username);
@@ -191,22 +187,22 @@ function init (request, response) {
                         session.user.followers = initJSON.tweet.followers;
                     }
 
-                    // request ---------------------------------------------------------------------------------------------------------------------------------------------------
+                    // request -----------------------------------------------------------------------------------------------------------------------------------------------------
                     else if (FLAG === "DON_RQ") {
                         initJSON.requests = items;
                     }
 
-                    // rooms -----------------------------------------------------------------------------------------------------------------------------------------------------
+                    // rooms -------------------------------------------------------------------------------------------------------------------------------------------------------
                     else if (FLAG === "DON_RM") {
                         initJSON.rooms = items;
                     }
 
-                    // #tags -----------------------------------------------------------------------------------------------------------------------------------------------------
+                    // #tags -------------------------------------------------------------------------------------------------------------------------------------------------------
                     else if (FLAG === "DON_#") {
                         initJSON.hashes = items;
                     }
 
-                    // DON! ------------------------------------------------------------------------------------------------------------------------------------------------------
+                    // DON! --------------------------------------------------------------------------------------------------------------------------------------------------------
                     if (++FIN === 7) {
                         // NOW, the client can initiate socket connection, it's all good son
                         initJSON.success = true;
@@ -217,7 +213,7 @@ function init (request, response) {
                     }
                 }
 
-                // tweets --------------------------------------------------------------------------------------------------------------------------------------------------------
+                // tweets ----------------------------------------------------------------------------------------------------------------------------------------------------------
                 // the user is following nobody! --- what an ass, right
                 if (session.user.following.length === 0) {
                     pg_client.query ('SELECT id, by, tweet, age(now(), "timestamp") AS age FROM tweet WHERE "by"=$1 ORDER BY "timestamp" DESC LIMIT 50;', [session.user.username], function (error, result) {
@@ -277,28 +273,37 @@ function init (request, response) {
             }
         }
     });
-    //*/
 }
 
 
 
 /// USA-USA-USA
 function login (request, response) {
-    sessionStore.get (request.session.id, function (error, session) {
-        console.log (session);
-    });
-
-    var iJSON = {};
+    // FIX: clean slate login procedure
     // yep, all things are in small cases...
     request.body.username = request.body.username.toLowerCase();
 
     // salva --- wait your turn son --- the other dude is logged in with your shit
+    // user trying to login is already logged in --- we'll figure out weather or not he/she/other is trying to login from a different location or the same agent
     if (iSocket.online_p().indexOf (request.body.username) !== -1) {
-        iJSON = {
-            success:    false,
-            code:       "SALVA",
-            message:    "Son, you've been compromised.</br><strong>ABORT! ABORT!</strong>"
-        };
+        // same user same browser --- code JOEY
+        // i've TRIED to block all known loop-holes
+        if (request.session.user !== undefined && request.session.user.username === request.body.username) {
+            iJSON = {
+                success:    true,
+                code:       "JOEY",
+                message:    "Mitch, you were already logged in"
+            };
+        }
+
+        // son, you have been compromised --- damn NSA
+        else {
+            iJSON = {
+                success:    false,
+                code:       "NSA",
+                message:    "Son, you've been compromised.</br><strong>ABORT!</strong>&nbsp;<strong>ABORT!</strong>"
+            };
+        }
 
         qJSON.qJSON (response, iJSON);
     }
@@ -348,31 +353,20 @@ function login (request, response) {
         });
     }
 
-    // someone is "logged in"
+    // someone is logged in...
     else if (request.session.user.username !== undefined) {
-        // JOEY - the same person is trying to login AGAIN - which is cool - though...
-        // user is already logged in --- but somehow forgot! --- that's not a surprise / or DOUBLE DIP
-        if (request.session.user.username === request.body.username) {
-            iJSON = {
-                success:    true,
-                code:       "JOEY",
-                message:    "Hey Joey, you were already logged in"
-            };
-        }
-
-        // DOUBLE dip on session! --- i would like to Double Dip Megan Fox 14!
-        else {
-            iJSON = {
-                success:    false,
-                code:       "DOUBLE_DIP",
-                message:    "Double Impact" // there an actual movie with that title, simply --- HORRIBLE!
-            };
-        }
+        iJSON = {
+            success:    false,
+            code:       "DOUBLE_DIP",
+            message:    "`Someone` is already logged in"
+        };
 
         qJSON.qJSON (response, iJSON);
     }
 
-    // straight up -- you ain't legit! --- Wu-Tang Clan - Windmill - 8 Diagrams
+
+
+    // straight up --- you ain't legit
     else {
         iJSON = {
             success:    false,
