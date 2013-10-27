@@ -188,7 +188,7 @@
                 <div class="row">
                     <div class="col-md-10 col-md-offset-1">
                         <ul class="list-group">
-                            <li class="list-group-item tweet" style="border-radius: 0px;" ng-repeat="iuser in users | filter:iQuery">
+                            <li class="list-group-item tweet" style="border-radius: 0px;" ng-repeat="iuser in users | filter:iQuery | orderBy:'username':false">
                                 <a style="font-size:18px; text-decoration:none;" href="#/iMolly/{{ user }}" onclick="followUser('{{iuser.username}}');">@{{ iuser.username }}</a>
 
                                 <span class="overlay text-right">
@@ -229,7 +229,7 @@
                 <div class="row">
                     <div class="col-md-10 col-md-offset-1">
                         <ul class="list-group">
-                            <li class="list-group-item" style="border-radius: 0px;" ng-repeat="hash in hashes | filter:iQuery | orderBy:hash.mentions | orderBy:hash.hash">
+                            <li class="list-group-item" style="border-radius: 0px;" ng-repeat="hash in hashes | filter:iQuery | orderBy:'mentions':true">
                                 <a href="#/iMolly/{{ user }}" onclick="joinTheHash('{{ hash.hash }}');" class="text-info" style="text-decoration:none; font-size:16px;">#{{ hash.hash }}</a></br>
                                 <span>By&nbsp;<small class="text-muted">{{ hash.initiator }}</small></span></br>
                                 <span style="color: rgba(51, 51, 51, 0.75); font-size: 18px;">{{ hash.mentions }}&nbsp;Mention{{ pluralize (hash.mentions) }}</span>

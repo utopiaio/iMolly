@@ -153,6 +153,9 @@
                             if (data.success) {
                                 console.log ("new user accepted");
                                 pnotify (data.message, "success");
+                                $scope.credentials.username = $scope.new_.username;
+                                $scope.credentials.password = $scope.new_.password;
+                                $scope.login_form_submit();
                             }
 
                             else {
