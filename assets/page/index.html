@@ -71,17 +71,17 @@
                         var HTML = "";
 
                         // we have some scanning to do...
-                        if (tweet.tweet.match (/[#@]{1}[a-zA-Z0-9_]+/) || tweet.tweet.match (/(http[s]?:\/\/(www\.)?)/)) {
+                        if (tweet.tweet.match (/[#@]{1}[a-zA-Z0-9\u1200-\u137F_]+/) || tweet.tweet.match (/(http[s]?:\/\/(www\.)?)/)) {
                             tweet.tweet.split (/[ \n]/).forEach (function (word) {
                                 // we have a #tag
-                                if (word.match (/^#[a-zA-Z0-9_]+$/)) {
+                                if (word.match (/^#[a-zA-Z0-9\u1200-\u137F_]+$/)) {
                                     HTML += '<a href="#/iMolly/'+ scope.user +'" onclick="joinTheHash(\''+ word.slice(1) +'\');" class="text-info" style="text-decoration:none;"><i>'+ word +'</i></a> ';
                                 }
 
                                 // we have a @user
                                 // we'll also be checking for validity on user --- i.e. it must exist before we link it
                                 // TODO: change the LAME username verification scheme!
-                                else if (word.match (/^@[a-zA-Z0-9_]+$/) && userList.indexOf('{"username":"'+ word.slice(1).toLowerCase() + '"}') !== -1) {
+                                else if (word.match (/^@[a-zA-Z0-9\u1200-\u137F_]+$/) && userList.indexOf('{"username":"'+ word.slice(1).toLowerCase() + '"}') !== -1) {
                                     HTML += '<a href="#/iMolly/'+ scope.user +'" onclick="followUser(\''+ word.slice(1).toLowerCase() +'\');" class="text-info" style="text-decoration:none;"><i>'+ word.toLowerCase() +'</i></a> ';
                                 }
 
